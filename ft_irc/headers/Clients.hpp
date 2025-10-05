@@ -32,13 +32,13 @@ class	Clients
 		std::string	_nickname;
 		std::string	_username;
 		std::string	_realname;
-		std::string	_hostname;
+		std::string	_hostnameIP;
 		ClientState	_cstate;
 		std::string	_buffer;
 
 	public:
 		Clients(void);
-		Clients(int fd, const std::string& hostname);
+		Clients(int fd, const std::string& hostnameIP);
 		Clients(const Clients &rhs);
 		~Clients(void);
 

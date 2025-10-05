@@ -19,14 +19,14 @@ Clients::Clients(void) : _cfd(-1), _cstate(CONNECTED)
 	return ;
 }
 
-Clients::Clients(int fd, const std::string &hostname) : _cfd(fd), _hostname(hostname), _cstate(CONNECTED)
+Clients::Clients(int fd, const std::string &hostnameIP) : _cfd(fd), _hostnameIP(hostnameIP), _cstate(CONNECTED)
 {
 	return ;
 }
 
 Clients::Clients(const Clients &rhs) : _cfd(rhs._cfd), _nickname(rhs._nickname),
 										_username(rhs._username), _realname(rhs._realname),
-										_hostname(rhs._hostname), _cstate(rhs._cstate),
+										_hostnameIP(rhs._hostnameIP), _cstate(rhs._cstate),
 										_buffer(rhs._buffer)
 {
 	return ;
@@ -34,8 +34,7 @@ Clients::Clients(const Clients &rhs) : _cfd(rhs._cfd), _nickname(rhs._nickname),
 
 Clients::~Clients(void)
 {
-	if (_cfd != -1 && _cstate != DISCONNECTED)
-		disconnect();
+	return;
 }
 
 //============= Surcharges d'operateur ===========//
@@ -48,7 +47,7 @@ Clients	&Clients::operator=(const Clients &rhs)
 		_nickname = rhs._nickname;
 		_username = rhs._username;
 		_realname = rhs._realname;
-		_hostname = rhs._hostname;
+		_hostnameIP = rhs._hostnameIP;
 		_cstate = rhs._cstate;
 		_buffer = rhs._buffer;
 	}
@@ -69,7 +68,7 @@ ClientState	Clients::getState(void) const
 
 const std::string	&Clients::getHostname(void) const
 {
-	return (this->_hostname);
+	return (this->_hostnameIP);
 }
 
 const std::string	&Clients::getNickname(void) const
@@ -164,10 +163,5 @@ bool	Clients::isConnected(void) const
 
 void	Clients::disconnect(void)
 {
-	if (_cfd != -1)
-	{
-		close(_cfd);
-		_cfd = -1;
-	}
 	_cstate = DISCONNECTED;
 }

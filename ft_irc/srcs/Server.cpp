@@ -180,7 +180,6 @@ void Server::_clientRemover(int client_fd)
 	// Supprimer de la map des clients
 	_clients.erase(client_fd);
 	std::vector<struct pollfd>::iterator it;
-
 	for (it = _pfds.begin(); it != _pfds.end(); ++it)
 	{
 		if (it->fd == client_fd)
@@ -197,11 +196,17 @@ void	Server::_handleClientMessage(int client_fd)
 {
 	char		buffer[512];
 	std::memset(buffer, 0, 512);
-
 	ssize_t		bytes_received = recv(client_fd, buffer, 511, 0);
-	if (bytes_received <= 0)
+
+	if (bytes_received < 0)
 	{
-		std::cout << "Client disconnected" << std::endl;
+		std::cerr << "Error receiving from client " << client_fd << ": " << strerror(errno) << std::endl;
+		_clientRemover(client_fd);
+		return;
+	}
+	if (bytes_received == 0)
+	{
+		std::cout << "Client " << client_fd << " disconnected cleanly" << std::endl;
 		_clientRemover(client_fd);
 		return;
 	}
@@ -212,13 +217,17 @@ void	Server::_handleClientMessage(int client_fd)
 		return;
 	}
 	client->appendToBuffer(std::string(buffer, bytes_received));
-	while (client->messageComplete())
+	// Traiter les messages complets (séparés par \r\n)
+	std::string	&client_buffer = const_cast<std::string&>(client->getBuffer());
+	size_t pos;
+	while ((pos = client_buffer.find("\r\n")) != std::string::npos)
 	{
-		std::string	message = client->extractMessage();
+		std::string message = client_buffer.substr(0, pos);
+		client_buffer.erase(0, pos + 2);
 		if (!message.empty())
 		{
-			std::cout << "Received from Client " << client->getNickname() << ": " << message << std::endl;
-			_processMessage(*client, message); 
+			std::cout << "Received from client " << client_fd << ": " << message << std::endl;
+			_processMessage(*client, message);
 		}
 	}
 }
@@ -288,18 +297,15 @@ void Server::run(void)
 {
 	while (_running)
 	{
+		int poll_result = poll(_pfds.data(), _pfds.size(), -1);  // Timeout infini
 
-		int poll_result = poll(_pfds.data(), _pfds.size(), 1000);
-		
 		if (poll_result < 0)
 		{
 			std::cerr << "Error: poll() failed" << std::endl;
 			break;
 		}
-		
 		if (poll_result == 0)
 		{
-			// Timeout - on peut faire des tâches de maintenance ici
 			continue;
 		}
 		// Vérifier chaque file descriptor
@@ -308,10 +314,26 @@ void Server::run(void)
 			if (_pfds[i].revents & POLLIN)
 			{
 				if (_pfds[i].fd == _server_fd)
+				{
+					std::cout << "🆕 New connection incoming..." << std::endl;
 					_acceptNewClient();
+				}
 				else
+				{
+					std::cout << "📨 Message from client FD: " << _pfds[i].fd << std::endl;
 					_handleClientMessage(_pfds[i].fd);
+				}
 			}
+			else if (_pfds[i].revents & (POLLHUP | POLLERR | POLLNVAL))
+			{
+				std::cout << "🚪 Client FD " << _pfds[i].fd << " disconnected (revents: " << _pfds[i].revents << ")" << std::endl;
+				if (_pfds[i].fd != _server_fd)
+				{
+					_clientRemover(_pfds[i].fd);
+					--i; // Ajuster l'index car le vecteur a changé
+				}
+			}
+			_pfds[i].revents = 0;  // Nettoyer les events
 		}
 	}
 }
