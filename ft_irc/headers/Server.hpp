@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:10:58 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/09/19 18:06:59 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/08 17:49:39 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 # include <algorithm>
 # include <poll.h>
 # include "Clients.hpp"
+# include "Channels.hpp"
 
 # define MAX_CLIENTS 100
 
@@ -35,13 +36,14 @@ class	Server
 {
 	private:
 		// Configuration de base
-		int							_port;
-		std::string					_password;
-		int							_server_fd;
-		struct sockaddr_in			_server_addr;
-		bool						_running;
-		std::vector<struct pollfd>	_pfds;
-		std::map<int, Clients>		_clients;
+		int								_port;
+		std::string						_password;
+		int								_server_fd;
+		struct sockaddr_in				_server_addr;
+		bool							_running;
+		std::vector<struct pollfd>		_pfds;
+		std::map<int, Clients>			_clients;
+		std::map<std::string, Channels>	_channels;
 
 		// Méthodes privées - étapes de setup
 		void	_createSocket(void);
@@ -72,12 +74,20 @@ class	Server
 		void		removeClient(int fd);
 		size_t		getClientCount(void) const;
 
-		// Méthodes principales - version simple
+		// SERVER activation N deactivation
 		void	start(void);		// Setup complet du serveur
 		void	run(void);
+		void	stop(void);			// Ferme les connexions
+
+		// CLIENT part
 		void	sendMessage(int client_fd, const std::string& message);	// Envoie UN message
 		void	broadcastMessage(const std::string &message);
-		void	stop(void);			// Ferme les connexions
+		void	removeClientFromAllChannels(int clientFd);
+
+		// CHANNELS part
+		Channels	*getChannel(const std::string &name);
+		Channels	*createChannel(const std::string &name);
+		void		removeChannel(const std::string &name);
 		
 };
 

@@ -6,7 +6,9 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:34 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/09/17 18:41:35 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/08 18:29:02 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#include "CommandHandler.hpp"
 

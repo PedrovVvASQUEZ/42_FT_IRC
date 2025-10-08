@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:53 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/03 19:05:05 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/08 17:56:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,6 +192,13 @@ void Server::_clientRemover(int client_fd)
 	std::cout << "Client " << client_fd << " removed. Total clients: " << _clients.size() << std::endl;
 }
 
+void Server::_processMessage(Clients& client, const std::string& message)
+{
+	// Pour l'instant, on fait encore de l'écho
+	// Plus tard, ici on parsera les commandes IRC (NICK, USER, JOIN, etc.)
+	sendMessage(client.getFd(), "ECHO: " + message);
+}
+
 void	Server::_handleClientMessage(int client_fd)
 {
 	char		buffer[512];
@@ -232,7 +239,7 @@ void	Server::_handleClientMessage(int client_fd)
 	}
 }
 
-//==================== PUBLIC Member functions ===================//
+//==================== CLIENT PART ===================//
 
 void	Server::sendMessage(int client_fd, const std::string &message)
 {
@@ -253,7 +260,7 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	std::cout << "Sent to client: " << client_fd << ": " << message << std::endl;
 }
 
-void Server::broadcastMessage(const std::string &message)
+void	Server::broadcastMessage(const std::string &message)
 {
 	std::map<int, Clients>::iterator it;
 
@@ -266,13 +273,18 @@ void Server::broadcastMessage(const std::string &message)
 	}
 }
 
-void Server::_processMessage(Clients& client, const std::string& message)
+void	Server::removeClientFromAllChannels(int clientFd)
 {
-	// Pour l'instant, on fait encore de l'écho
-	// Plus tard, ici on parsera les commandes IRC (NICK, USER, JOIN, etc.)
-	sendMessage(client.getFd(), "ECHO: " + message);
+	std::map<std::string, Channels>::iterator	it;
+	for (it = _channels.begin(); it != _channels.end(); ++it)
+	{
+		if (it->second.isMember(clientFd))
+		{
+			it->second.removeMember(clientFd);
+			std::cout << "Client " << clientFd << " removed from Channel " << it->first << std::endl;
+		}
+	}
 }
-
 //==================== SERVER activation N deactivation ===================//
 
 
@@ -355,3 +367,33 @@ void Server::stop(void)
 	std::cout << "Server stopped" << std::endl;
 }
 
+//==================== CHANNELS PART ===================//
+
+Channels	*Server::getChannel(const std::string &name)
+{
+	std::map<std::string, Channels>::iterator it = _channels.find(name);
+	if (it != _channels.end())
+		return &(it->second);
+	return (NULL);
+}
+
+Channels	*Server::createChannel(const std::string &name)
+{
+	if (getChannel(name) != NULL)
+		return (getChannel(name));
+	_channels[name] = Channels(name);
+	std::cout << "Channel " << name << " created" << std::endl;
+	return (&_channels[name]);
+}
+
+void		Server::removeChannel(const std::string &name)
+{
+	Channels	*to_remove = getChannel(name);
+	if (to_remove == NULL)
+		return ;
+	if (to_remove->isEmpty())
+	{
+		_channels.erase(name);
+		std::cout << "Channel " << name << " removed" << std::endl;
+	}
+}
