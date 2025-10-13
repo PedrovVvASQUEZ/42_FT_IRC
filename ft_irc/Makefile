@@ -22,12 +22,16 @@ OBJS_DIR = objs
 SOURCES = main.cpp\
 			Server.cpp\
 			Clients.cpp\
+			Channels.cpp\
+			CommandHandler.cpp\
 
 SRCS = $(addprefix $(SRCS_DIR)/, $(SOURCES))
 OBJS = $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
 HEADERS = Server.hpp\
 			Clients.hpp\
+			Channels.hpp\
+			CommandHandler.hpp\
 
 HDRS = $(addprefix $(HEADER_DIR)/, $(HEADERS))
 

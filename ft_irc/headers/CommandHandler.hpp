@@ -65,6 +65,14 @@
 
 # include <string>
 # include <vector>
+# include "Server.hpp"
+# include "Clients.hpp"
+# include "Channels.hpp"
+# include <iostream>
+# include <sstream>
+# include <algorithm>
+# include <cctype>
+# include <iomanip>
 
 class	Server;
 class	Clients;
