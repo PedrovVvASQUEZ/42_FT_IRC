@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:11:54 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/08 18:48:54 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/14 18:44:56 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,13 +65,16 @@
 
 # include <string>
 # include <vector>
-# include "Server.hpp"
 # include "Clients.hpp"
+# include "Messages.hpp"
 # include "Channels.hpp"
 # include <iostream>
 # include <sstream>
 # include <algorithm>
 # include <cctype>
+
+// Forward declarations
+class Server;
 # include <iomanip>
 
 class	Server;
@@ -90,17 +93,17 @@ class	CommandHandler
 		bool		_isValidChannel(const std::string& channel);
 		
 		// Fonctions de commandes principales
-		void		_handlePass(Clients& client, const std::string& params);
-		void		_handleNick(Clients& client, const std::string& params);
-		void		_handleUser(Clients& client, const std::string& params);
-		void		_handleJoin(Clients& client, const std::string& params);
-		void		_handlePart(Clients& client, const std::string& params);
-		void		_handlePrivmsg(Clients& client, const std::string& params);
-		void		_handleQuit(Clients& client, const std::string& params);
-		void		_handleKick(Clients& client, const std::string& params);
-		void		_handleInvite(Clients& client, const std::string& params);
-		void		_handleMode(Clients& client, const std::string& params);
-		void		_handleTopic(Clients& client, const std::string& params);
+		void		_handlePass(Clients& client, const Messages& message);
+		void		_handleNick(Clients& client, const Messages& message);
+		void		_handleUser(Clients& client, const Messages& message);
+		void		_handleJoin(Clients& client, const Messages& message);
+		void		_handlePart(Clients& client, const Messages& message);
+		void		_handlePrivmsg(Clients& client, const Messages& message);
+		void		_handleQuit(Clients& client, const Messages& message);
+		void		_handleKick(Clients& client, const Messages& message);
+		void		_handleInvite(Clients& client, const Messages& message);
+		void		_handleMode(Clients& client, const Messages& message);
+		void		_handleTopic(Clients& client, const Messages& message);
 		
 		// Fonctions d'aide pour les réponses
 		void		_sendNumericReply(Clients& client, int code, const std::string& params);
@@ -116,7 +119,7 @@ class	CommandHandler
 		CommandHandler	&operator=(const CommandHandler &rhs);
 
 		// Fonction principale
-		void		processCommand(Clients& client, const std::string& message);
+		void		processCommand(Clients& client, const Messages& message);
 		void		setServer(Server* server);
 };
 

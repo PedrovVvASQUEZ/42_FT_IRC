@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:53 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/08 17:56:16 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/14 18:37:33 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,18 +14,18 @@
 
 //==================== Contructors N Destructor ===================//
 
-Server::Server(void) : _port(0), _password("Password"), _server_fd(-1), _running(false)
+Server::Server(void) : _port(0), _password("Password"), _server_fd(-1), _running(false), _commandHandler(this)
 {
 	return ;
 }
 
-Server::Server(int port, const std::string &password) : _port(port), _password(password), _server_fd(-1), _running(false)
+Server::Server(int port, const std::string &password) : _port(port), _password(password), _server_fd(-1), _running(false), _commandHandler(this)
 {
 	std::memset(&_server_addr, 0, sizeof(_server_addr));
 	std::cout << "Server created on port " << _port << std::endl;
 }
 
-Server::Server(const Server &rhs) : _port(rhs._port), _password(rhs._password), _server_fd(-1), _running(false)
+Server::Server(const Server &rhs) : _port(rhs._port), _password(rhs._password), _server_fd(-1), _running(false), _commandHandler(this)
 {
 	std::memset(&_server_addr, 0, sizeof(_server_addr));
 	std::cout << "Server copied (port " << _port << ")" << std::endl;
@@ -50,6 +50,7 @@ Server	&Server::operator=(const Server &rhs)
 		_password = rhs._password;
 		_server_fd = -1;  // Reset - il faudra redémarrer le serveur
 		_running = false;  // Reset
+		_commandHandler.setServer(this);  // Réinitialiser le CommandHandler
 		std::memset(&_server_addr, 0, sizeof(_server_addr));
 	}
 	return (*this);
@@ -85,9 +86,27 @@ Clients* Server::getClient(int fd)
 	return (NULL);
 }
 
+Clients* Server::getClientByNickname(const std::string& nickname)
+{
+	std::map<int, Clients>::iterator it;
+	for (it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second.getNickname() == nickname)
+			return &(it->second);
+	}
+	return (NULL);
+}
+
 void	Server::removeClient(int fd)
 {
 	_clientRemover(fd);
+}
+
+void	Server::removeClient(Clients* client)
+{
+	if (!client)
+		return;
+	_clientRemover(client->getFd());
 }
 
 size_t Server::getClientCount(void) const
@@ -192,21 +211,29 @@ void Server::_clientRemover(int client_fd)
 	std::cout << "Client " << client_fd << " removed. Total clients: " << _clients.size() << std::endl;
 }
 
-void Server::_processMessage(Clients& client, const std::string& message)
+void Server::_processMessage(Clients& client, const Messages &message)
 {
-	// Pour l'instant, on fait encore de l'écho
-	// Plus tard, ici on parsera les commandes IRC (NICK, USER, JOIN, etc.)
-	sendMessage(client.getFd(), "ECHO: " + message);
+	// Utiliser le CommandHandler pour traiter les commandes IRC
+	_commandHandler.processCommand(client, message);
 }
 
 void	Server::_handleClientMessage(int client_fd)
 {
 	char		buffer[512];
 	std::memset(buffer, 0, 512);
+	
+	// Sur Linux : recv() peut retourner EAGAIN en mode non-bloquant
+	// Mais avec poll(), on sait déjà que des données sont disponibles
 	ssize_t		bytes_received = recv(client_fd, buffer, 511, 0);
 
 	if (bytes_received < 0)
 	{
+		// Gestion spéciale pour mode non-bloquant
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		{
+			// Pas de données disponibles maintenant, on reviendra plus tard
+			return;
+		}
 		std::cerr << "Error receiving from client " << client_fd << ": " << strerror(errno) << std::endl;
 		_clientRemover(client_fd);
 		return;
@@ -225,16 +252,26 @@ void	Server::_handleClientMessage(int client_fd)
 	}
 	client->appendToBuffer(std::string(buffer, bytes_received));
 	// Traiter les messages complets (séparés par \r\n)
-	std::string	&client_buffer = const_cast<std::string&>(client->getBuffer());
+	std::string	&client_buffer = client->getBuffer();
 	size_t pos;
 	while ((pos = client_buffer.find("\r\n")) != std::string::npos)
 	{
-		std::string message = client_buffer.substr(0, pos);
+		std::string raw_message = client_buffer.substr(0, pos);
 		client_buffer.erase(0, pos + 2);
-		if (!message.empty())
+		if (!raw_message.empty())
 		{
-			std::cout << "Received from client " << client_fd << ": " << message << std::endl;
-			_processMessage(*client, message);
+			std::cout << "Received from client " << client_fd << ": " << raw_message << std::endl;
+			
+			// Créer un objet Messages pour parser le message IRC
+			Messages msg(raw_message);
+			if (msg.isValid())
+			{
+				_processMessage(*client, msg);
+			}
+			else
+			{
+				std::cout << "Invalid message format from client " << client_fd << std::endl;
+			}
 		}
 	}
 }
@@ -251,12 +288,27 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	}
 	std::string full_message = message + "\r\n";
 	ssize_t bytes_sent = send(client_fd, full_message.c_str(), full_message.length(), 0);
+	
 	if (bytes_sent < 0)
 	{
-		std::cerr << "Error: Failed to send message" << std::endl;
+		// Gestion pour mode non-bloquant
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		{
+			// Buffer de sortie plein, on devrait stocker le message pour plus tard
+			// Pour l'instant, on ignore (simplifié)
+			std::cout << "Send buffer full for client " << client_fd << std::endl;
+			return;
+		}
+		std::cerr << "Error: Failed to send message to client " << client_fd << std::endl;
 		_clientRemover(client_fd);
 		return;
 	}
+	else if (bytes_sent < (ssize_t)full_message.length())
+	{
+		// Envoi partiel - en mode non-bloquant, on devrait gérer ça
+		std::cout << "Partial send to client " << client_fd << ": " << bytes_sent << "/" << full_message.length() << std::endl;
+	}
+	
 	std::cout << "Sent to client: " << client_fd << ": " << message << std::endl;
 }
 
@@ -273,15 +325,18 @@ void	Server::broadcastMessage(const std::string &message)
 	}
 }
 
-void	Server::removeClientFromAllChannels(int clientFd)
+void	Server::removeClientFromAllChannels(Clients* client)
 {
+	if (!client)
+		return;
+	
 	std::map<std::string, Channels>::iterator	it;
 	for (it = _channels.begin(); it != _channels.end(); ++it)
 	{
-		if (it->second.isMember(clientFd))
+		if (it->second.isMember(client))
 		{
-			it->second.removeMember(clientFd);
-			std::cout << "Client " << clientFd << " removed from Channel " << it->first << std::endl;
+			it->second.removeMember(client);
+			std::cout << "Client " << client->getNickname() << " removed from Channel " << it->first << std::endl;
 		}
 	}
 }
@@ -396,4 +451,22 @@ void		Server::removeChannel(const std::string &name)
 		_channels.erase(name);
 		std::cout << "Channel " << name << " removed" << std::endl;
 	}
+}
+
+//==================== SERVER UTILITIES ===================//
+
+std::string	Server::getServerName(void) const
+{
+	return ("ft_irc.42.fr");
+}
+
+bool		Server::isNicknameInUse(const std::string& nickname) const
+{
+	std::map<int, Clients>::const_iterator it;
+	for (it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second.getNickname() == nickname)
+			return (true);
+	}
+	return (false);
 }

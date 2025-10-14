@@ -6,11 +6,12 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:34 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/08 18:29:02 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/14 18:44:50 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CommandHandler.hpp"
+#include "Server.hpp"
 
 //==================== Constructeurs et Destructeur ===================//
 
@@ -129,7 +130,7 @@ bool CommandHandler::_isValidChannel(const std::string& channel)
 
 //==================== Fonction principale ===================//
 
-void CommandHandler::processCommand(Clients& client, const std::string& message)
+void CommandHandler::processCommand(Clients& client, const Messages& message)
 {
 	if (!_server)
 	{
@@ -137,57 +138,41 @@ void CommandHandler::processCommand(Clients& client, const std::string& message)
 		return;
 	}
 	
-	// Nettoyer le message (supprimer \r\n)
-	std::string clean_message = message;
-	if (!clean_message.empty() && clean_message[clean_message.length() - 1] == '\n')
-		clean_message.erase(clean_message.length() - 1);
-	if (!clean_message.empty() && clean_message[clean_message.length() - 1] == '\r')
-		clean_message.erase(clean_message.length() - 1);
-	
-	if (clean_message.empty())
+	if (!message.isValid())
+	{
+		std::cerr << "Error: Invalid message format" << std::endl;
 		return;
-	
-	std::cout << "📨 Processing command from client " << client.getFd() << ": " << clean_message << std::endl;
-	
-	// Parser la commande IRC : COMMAND param1 param2 :trailing param
-	std::string command;
-	std::string params;
-	
-	size_t space_pos = clean_message.find(' ');
-	if (space_pos != std::string::npos)
-	{
-		command = _toUpper(clean_message.substr(0, space_pos));
-		params = clean_message.substr(space_pos + 1);
 	}
-	else
-	{
-		command = _toUpper(clean_message);
-		params = "";
-	}
+	
+	std::string command = message.getCommand();
+	std::cout << "📨 Processing command from client " << client.getFd() << ": " << command << std::endl;
+	
+	// Convertir la commande en majuscules pour la comparaison
+	command = _toUpper(command);
 	
 	// Dispatcher vers les bonnes fonctions de commande
 	if (command == "PASS")
-		_handlePass(client, params);
+		_handlePass(client, message);
 	else if (command == "NICK")
-		_handleNick(client, params);
+		_handleNick(client, message);
 	else if (command == "USER")
-		_handleUser(client, params);
+		_handleUser(client, message);
 	else if (command == "JOIN")
-		_handleJoin(client, params);
+		_handleJoin(client, message);
 	else if (command == "PART")
-		_handlePart(client, params);
+		_handlePart(client, message);
 	else if (command == "PRIVMSG")
-		_handlePrivmsg(client, params);
+		_handlePrivmsg(client, message);
 	else if (command == "QUIT")
-		_handleQuit(client, params);
+		_handleQuit(client, message);
 	else if (command == "KICK")
-		_handleKick(client, params);
+		_handleKick(client, message);
 	else if (command == "INVITE")
-		_handleInvite(client, params);
+		_handleInvite(client, message);
 	else if (command == "MODE")
-		_handleMode(client, params);
+		_handleMode(client, message);
 	else if (command == "TOPIC")
-		_handleTopic(client, params);
+		_handleTopic(client, message);
 	else
 	{
 		// Commande inconnue
@@ -234,13 +219,15 @@ void CommandHandler::_sendWelcomeSequence(Clients& client)
 
 //==================== Commandes d'authentification ===================//
 
-void CommandHandler::_handlePass(Clients& client, const std::string& params)
+void CommandHandler::_handlePass(Clients& client, const Messages& message)
 {
-	if (params.empty())
+	if (message.getParamCount() == 0)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PASS :Not enough parameters");
 		return;
 	}
+	
+	std::string password = message.getParam(0);
 	
 	// Si déjà authentifié, erreur
 	if (client.getState() == AUTHENTIFICATED)
@@ -248,9 +235,8 @@ void CommandHandler::_handlePass(Clients& client, const std::string& params)
 		_sendNumericReply(client, ERR_ALREADYREGISTRED, ":You may not reregister");
 		return;
 	}
-	
 	// Vérifier le mot de passe
-	if (params == _server->getPassword())
+	if (password == _server->getPassword())
 	{
 		// Mot de passe correct - le client peut maintenant s'authentifier
 		std::cout << "🔐 Client " << client.getFd() << " provided correct password" << std::endl;
@@ -264,19 +250,15 @@ void CommandHandler::_handlePass(Clients& client, const std::string& params)
 	}
 }
 
-void CommandHandler::_handleNick(Clients& client, const std::string& params)
+void CommandHandler::_handleNick(Clients& client, const Messages& message)
 {
-	if (params.empty())
+	if (message.getParamCount() == 0)
 	{
 		_sendNumericReply(client, ERR_NONICKNAMEGIVEN, ":No nickname given");
 		return;
 	}
 	
-	// Extraire le nickname (premier paramètre)
-	std::string nickname = params;
-	size_t space_pos = nickname.find(' ');
-	if (space_pos != std::string::npos)
-		nickname = nickname.substr(0, space_pos);
+	std::string nickname = message.getParam(0);
 	
 	// Valider le nickname
 	if (!_isValidNickname(nickname))
@@ -286,7 +268,11 @@ void CommandHandler::_handleNick(Clients& client, const std::string& params)
 	}
 	
 	// Vérifier si le nickname est déjà utilisé
-	// TODO: Implémenter la vérification d'unicité via le serveur
+	if (_server->isNicknameInUse(nickname))
+	{
+		_sendNumericReply(client, ERR_NICKNAMEINUSE, nickname + " :Nickname is already in use");
+		return;
+	}
 	
 	std::string old_nick = client.getNickname();
 	client.setNickname(nickname);
@@ -298,7 +284,6 @@ void CommandHandler::_handleNick(Clients& client, const std::string& params)
 	else
 	{
 		std::cout << "📛 Client " << client.getFd() << " changed nickname from " << old_nick << " to " << nickname << std::endl;
-		// Notifier le changement de nick aux autres clients si nécessaire
 	}
 	
 	// Si toutes les infos sont présentes et pas encore authentifié, envoyer la séquence de bienvenue
@@ -309,9 +294,9 @@ void CommandHandler::_handleNick(Clients& client, const std::string& params)
 	}
 }
 
-void CommandHandler::_handleUser(Clients& client, const std::string& params)
+void CommandHandler::_handleUser(Clients& client, const Messages& message)
 {
-	if (params.empty())
+	if (message.getParamCount() < 4)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "USER :Not enough parameters");
 		return;
@@ -324,23 +309,8 @@ void CommandHandler::_handleUser(Clients& client, const std::string& params)
 		return;
 	}
 	
-	// Parser: USER username hostname servername :realname
-	std::vector<std::string> tokens = _split(params, ' ');
-	if (tokens.size() < 4)
-	{
-		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "USER :Not enough parameters");
-		return;
-	}
-	
-	std::string username = tokens[0];
-	std::string realname;
-	
-	// Chercher le realname après ':'
-	size_t colon_pos = params.find(':');
-	if (colon_pos != std::string::npos)
-		realname = params.substr(colon_pos + 1);
-	else
-		realname = "Unknown";
+	std::string username = message.getParam(0);
+	std::string realname = message.getParamCount() > 3 ? message.getParam(3) : "Unknown";
 	
 	client.setUsername(username);
 	client.setRealname(realname);
@@ -355,98 +325,62 @@ void CommandHandler::_handleUser(Clients& client, const std::string& params)
 	}
 }
 
-void CommandHandler::_handleQuit(Clients& client, const std::string& params)
+void CommandHandler::_handleQuit(Clients& client, const Messages& message)
 {
 	std::string quit_message = "Quit";
-	
-	// Chercher le message après ':'
-	size_t colon_pos = params.find(':');
-	if (colon_pos != std::string::npos)
-		quit_message = params.substr(colon_pos + 1);
-	
+	if (message.getParamCount() > 0)
+		quit_message = message.getParam(0);
+		
 	std::cout << "👋 Client " << client.getNickname() << " (" << client.getFd() << ") is quitting: " << quit_message << std::endl;
-	
-	// Notifier les autres clients dans les channels
-	// TODO: Implémenter la notification aux channels
-	
-	// Fermer la connexion
 	_server->removeClient(client.getFd());
 }
 
 //==================== Commandes de channels (stubs) ===================//
 
-void CommandHandler::_handleJoin(Clients& client, const std::string& params)
+void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 {
-	if (!client.isAuthenticated())
-	{
-		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
-	}
-	
-	if (params.empty())
-	{
-		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "JOIN :Not enough parameters");
-		return;
-	}
-	
-	// TODO: Implémenter JOIN avec la classe Channels
-	std::cout << "📺 JOIN command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "📺 JOIN command from " << client.getNickname() << " (stub implementation)" << std::endl;
+	(void)message;
 }
 
-void CommandHandler::_handlePart(Clients& client, const std::string& params)
+void CommandHandler::_handlePart(Clients& client, const Messages& message)
 {
-	if (!client.isAuthenticated())
-	{
-		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
-	}
-	
-	if (params.empty())
-	{
-		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
-		return;
-	}
-	
-	// TODO: Implémenter PART avec la classe Channels
-	std::cout << "📺 PART command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "📺 PART command from " << client.getNickname() << " (stub implementation)" << std::endl;
+	(void)message;
 }
 
-void CommandHandler::_handlePrivmsg(Clients& client, const std::string& params)
+void CommandHandler::_handlePrivmsg(Clients& client, const Messages& message)
 {
-	if (!client.isAuthenticated())
-	{
-		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
-	}
-	
-	if (params.empty())
-	{
-		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PRIVMSG :Not enough parameters");
-		return;
-	}
-	
-	// TODO: Implémenter PRIVMSG avec la classe Channels
-	std::cout << "💬 PRIVMSG command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "💬 PRIVMSG command from " << client.getNickname() << " (stub implementation)" << std::endl;
+	(void)message;
 }
 
 // Stubs pour les autres commandes
-void CommandHandler::_handleKick(Clients& client, const std::string& params)
+void CommandHandler::_handleKick(Clients& client, const Messages& message)
 {
-	std::cout << "⚡ KICK command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "⚡ KICK command (stub implementation)" << std::endl;
+	(void)client;
+	(void)message;
 }
 
-void CommandHandler::_handleInvite(Clients& client, const std::string& params)
+void CommandHandler::_handleInvite(Clients& client, const Messages& message)
 {
-	std::cout << "✉️ INVITE command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "✉️ INVITE command (stub implementation)" << std::endl;
+	(void)client;
+	(void)message;
 }
 
-void CommandHandler::_handleMode(Clients& client, const std::string& params)
+void CommandHandler::_handleMode(Clients& client, const Messages& message)
 {
-	std::cout << "🔧 MODE command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "🔧 MODE command (stub implementation)" << std::endl;
+	(void)client;
+	(void)message;
 }
 
-void CommandHandler::_handleTopic(Clients& client, const std::string& params)
+void CommandHandler::_handleTopic(Clients& client, const Messages& message)
 {
-	std::cout << "📝 TOPIC command from " << client.getNickname() << ": " << params << " (not implemented yet)" << std::endl;
+	std::cout << "📝 TOPIC command (stub implementation)" << std::endl;
+	(void)client;
+	(void)message;
 }
 

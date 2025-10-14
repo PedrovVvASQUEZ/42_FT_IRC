@@ -6,7 +6,7 @@
 #    By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/17 17:18:02 by pgrellie          #+#    #+#              #
-#    Updated: 2025/09/19 18:03:32 by pgrellie         ###   ########.fr        #
+#    Updated: 2025/10/14 18:31:24 by pgrellie         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,6 +24,7 @@ SOURCES = main.cpp\
 			Clients.cpp\
 			Channels.cpp\
 			CommandHandler.cpp\
+			Messages.cpp\
 
 SRCS = $(addprefix $(SRCS_DIR)/, $(SOURCES))
 OBJS = $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
@@ -32,6 +33,7 @@ HEADERS = Server.hpp\
 			Clients.hpp\
 			Channels.hpp\
 			CommandHandler.hpp\
+			Messages.hpp\
 
 HDRS = $(addprefix $(HEADER_DIR)/, $(HEADERS))
 

@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:08 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/08 16:19:33 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/14 18:41:03 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,9 +60,14 @@ const std::string	&Channels::getTopic(void) const
 	return (_topic);
 }
 
-const std::vector<int>	&Channels::getMembers(void) const
+const std::set<Clients*> &Channels::getMembers(void) const
 {
 	return (_members);
+}
+
+const std::set<Clients*> &Channels::getOperators(void) const
+{
+	return (_operators);
 }
 
 size_t				Channels::getMembersCount(void) const
@@ -79,28 +84,48 @@ void	Channels::setTopic(const std::string &topic)
 
 //==================== Fonctions publics ===================//
 
-bool	Channels::addMember(int clientFd)
+bool	Channels::addMember(Clients* client)
 {
-	if (isMember(clientFd))
+	if (!client || isMember(client))
 		return (false);
-	_members.push_back(clientFd);
+	_members.insert(client);
 	return (true);
 }
 
-bool	Channels::removeMember(int clientFd)
+bool	Channels::removeMember(Clients* client)
 {
-	std::vector<int>::iterator it = std::find(_members.begin(), _members.end(), clientFd);
-	if (it != _members.end())
-	{
-		_members.erase(it);
-		return (true);
-	}
-	return (false);
+	if (!client)
+		return (false);
+	return (_members.erase(client) > 0);
 }
 
-bool	Channels::isMember(int clientFd) const
+bool	Channels::addOperator(Clients* client)
 {
-	return (std::find(_members.begin(), _members.end(), clientFd) != _members.end());
+	if (!client || !isMember(client))
+		return (false);
+	_operators.insert(client);
+	return (true);
+}
+
+bool	Channels::removeOperator(Clients* client)
+{
+	if (!client)
+		return (false);
+	return (_operators.erase(client) > 0);
+}
+
+bool	Channels::isMember(Clients* client) const
+{
+	if (!client)
+		return (false);
+	return (_members.find(client) != _members.end());
+}
+
+bool	Channels::isOperator(Clients* client) const
+{
+	if (!client)
+		return (false);
+	return (_operators.find(client) != _operators.end());
 }
 
 bool	Channels::isEmpty(void) const
