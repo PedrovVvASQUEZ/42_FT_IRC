@@ -15,21 +15,25 @@
 // Constructeurs
 Messages::Messages() : _isValid(false)
 {
+	return ;
 }
 
 Messages::Messages(const std::string& rawMessage) : _rawMessage(rawMessage), _isValid(false)
 {
 	_parseMessage();
+	return ;
 }
 
 Messages::Messages(const Messages& other)
 {
 	*this = other;
+	return ;
 }
 
 // Destructeur
 Messages::~Messages()
 {
+	return ;
 }
 
 // Opérateur d'assignation
@@ -45,23 +49,18 @@ Messages& Messages::operator=(const Messages& other)
 	}
 	return *this;
 }
-
 // Méthodes privées
 void Messages::_parseMessage()
 {
 	if (_rawMessage.empty())
 		return;
-
 	std::string message = _rawMessage;
-	
 	// Enlever le CRLF de fin si présent
 	if (message.size() >= 2 && message.substr(message.size() - 2) == "\r\n")
 		message = message.substr(0, message.size() - 2);
 	else if (message.size() >= 1 && (message[message.size() - 1] == '\r' || message[message.size() - 1] == '\n'))
 		message = message.substr(0, message.size() - 1);
-
 	size_t pos = 0;
-
 	// 1. Parser le préfixe (optionnel, commence par ':')
 	if (message[0] == ':')
 	{
@@ -71,7 +70,6 @@ void Messages::_parseMessage()
 		_prefix = message.substr(1, pos - 1);
 		pos++;
 	}
-
 	// 2. Parser la commande
 	size_t commandStart = pos;
 	pos = message.find(' ', commandStart);
@@ -82,10 +80,8 @@ void Messages::_parseMessage()
 		_isValid = _validateCommand();
 		return;
 	}
-	
 	_command = message.substr(commandStart, pos - commandStart);
 	pos++;
-
 	// 3. Parser les paramètres
 	while (pos < message.size())
 	{
@@ -111,7 +107,6 @@ void Messages::_parseMessage()
 			}
 		}
 	}
-
 	_isValid = _validateCommand();
 }
 
@@ -119,7 +114,6 @@ bool Messages::_validateCommand() const
 {
 	if (_command.empty())
 		return false;
-
 	// Commandes IRC standard
 	if (_command == "PASS" || _command == "NICK" || _command == "USER" ||
 		_command == "JOIN" || _command == "PART" || _command == "QUIT" ||
@@ -128,7 +122,6 @@ bool Messages::_validateCommand() const
 		_command == "PING" || _command == "PONG" || _command == "WHO" ||
 		_command == "WHOIS" || _command == "LIST" || _command == "NAMES")
 		return true;
-
 	// Réponses numériques (001-999)
 	if (_command.size() == 3)
 	{
@@ -139,7 +132,6 @@ bool Messages::_validateCommand() const
 		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -148,7 +140,6 @@ std::string Messages::_trim(const std::string& str) const
 	size_t start = str.find_first_not_of(" \t\r\n");
 	if (start == std::string::npos)
 		return "";
-	
 	size_t end = str.find_last_not_of(" \t\r\n");
 	return str.substr(start, end - start + 1);
 }
