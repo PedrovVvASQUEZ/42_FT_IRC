@@ -23,8 +23,8 @@ class	Channels
 	private:
 		std::string			_name;		// Nom du canal (#general)
 		std::string			_topic;		// Sujet du canal
-		std::set<Clients*>	_members;	// Liste des pointeurs vers les clients membres
-		std::set<Clients*>	_operators;	// Liste des pointeurs vers les opérateurs
+		std::set<Clients *>	_members;	// Liste des pointeurs vers les clients membres
+		std::set<Clients *>	_operators;	// Liste des pointeurs vers les opérateurs
 
 	public:
 		// Constructeurs/Destructeur

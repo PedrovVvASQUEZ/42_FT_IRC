@@ -37,7 +37,6 @@ int main(int argc, char* argv[])
 	std::string password = argv[2];
 	Server server(port, password);
 	g_server = &server;
-	// Gérer Ctrl+C proprement
 	signal(SIGINT, signalHandler);
 	server.start();
 	server.run();
