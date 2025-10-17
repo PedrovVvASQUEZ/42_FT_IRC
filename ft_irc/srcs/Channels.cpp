@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "Channels.hpp"
+#include <iostream>
 
 //==================== Contructors N Destructor ===================//
 
@@ -24,7 +25,7 @@ Channels::Channels(const std::string &name) : _name(name), _topic("No topic")
 	return ;
 }
 
-Channels::Channels(const Channels &rhs) : _name(rhs._name), _topic(rhs._topic), _members(rhs._members)
+Channels::Channels(const Channels &rhs) : _name(rhs._name), _topic(rhs._topic), _members(rhs._members), _operators(rhs._operators)
 {
 	return ;
 }
@@ -43,6 +44,7 @@ Channels	&Channels::operator=(const Channels &rhs)
 		_name = rhs._name;
 		_topic = rhs._topic;
 		_members = rhs._members;
+		_operators = rhs._operators;
 	}
 	return (*this);
 }
@@ -96,6 +98,11 @@ bool	Channels::removeMember(Clients* client)
 {
 	if (!client)
 		return (false);
+	
+	// Retirer automatiquement les privilèges d'opérateur si applicable
+	if (isOperator(client))
+		_operators.erase(client);
+	
 	return (_members.erase(client) > 0);
 }
 
@@ -111,6 +118,11 @@ bool	Channels::removeOperator(Clients* client)
 {
 	if (!client)
 		return (false);
+	
+	// Empêcher de retirer le dernier opérateur s'il y a encore des membres
+	if (_operators.size() == 1 && _members.size() > 1 && isOperator(client))
+		return (false);
+	
 	return (_operators.erase(client) > 0);
 }
 
@@ -131,4 +143,35 @@ bool	Channels::isOperator(Clients* client) const
 bool	Channels::isEmpty(void) const
 {
 	return (_members.empty());
+}
+
+std::string	Channels::getMembersList(void) const
+{
+	std::string members_list;
+	std::set<Clients*>::const_iterator it;
+	
+	for (it = _members.begin(); it != _members.end(); ++it)
+	{
+		if (!members_list.empty())
+			members_list += " ";
+		
+		// Ajouter le préfixe d'opérateur si nécessaire
+		if (isOperator(*it))
+			members_list += "@";
+		
+		members_list += (*it)->getNickname();
+	}
+	return members_list;
+}
+
+Clients* Channels::findMemberByFd(int fd) const
+{
+	std::set<Clients*>::const_iterator it;
+	
+	for (it = _members.begin(); it != _members.end(); ++it)
+	{
+		if ((*it)->getFd() == fd)
+			return *it;
+	}
+	return NULL;
 }

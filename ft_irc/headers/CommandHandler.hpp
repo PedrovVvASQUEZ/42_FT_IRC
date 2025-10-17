@@ -23,6 +23,7 @@
 # define RPL_UMODEIS			221
 
 // CHANNEL REPLIES
+# define RPL_CHANNELMODEIS		324
 # define RPL_NOTOPIC			331
 # define RPL_TOPIC				332
 # define RPL_INVITING			341

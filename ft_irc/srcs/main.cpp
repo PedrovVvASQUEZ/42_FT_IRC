@@ -35,6 +35,16 @@ int main(int argc, char* argv[])
 	}
 	int port = std::atoi(argv[1]);
 	std::string password = argv[2];
+	if (port <= 0 || port > 65535)
+	{
+		std::cerr << "Error: Port must be between 1 and 65535" << std::endl;
+		return 1;
+	}
+	if (password.empty())
+	{
+		std::cerr << "Error: Password cannot be empty" << std::endl;
+		return 1;
+	}
 	Server server(port, password);
 	g_server = &server;
 	signal(SIGINT, signalHandler);

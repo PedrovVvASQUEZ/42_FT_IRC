@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include <errno.h>
 #include "Server.hpp"
 
 //==================== Contructors N Destructor ===================//
@@ -86,9 +87,28 @@ Clients* Server::getClient(int fd)
 	return (NULL);
 }
 
+const Clients* Server::getClient(int fd) const
+{
+	std::map<int, Clients>::const_iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return &(it->second);
+	return (NULL);
+}
+
 Clients* Server::getClientByNickname(const std::string& nickname)
 {
 	std::map<int, Clients>::iterator it;
+	for (it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second.getNickname() == nickname)
+			return &(it->second);
+	}
+	return (NULL);
+}
+
+const Clients* Server::getClientByNickname(const std::string& nickname) const
+{
+	std::map<int, Clients>::const_iterator it;
 	for (it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		if (it->second.getNickname() == nickname)
@@ -270,7 +290,8 @@ void	Server::_handleClientMessage(int client_fd)
 			}
 			else
 			{
-				std::cout << "Invalid message format from client " << client_fd << std::endl;
+				std::cout << "Invalid message format from client " << client_fd << ": " << raw_message << std::endl;
+				// Pour les messages non-IRC (tests simples), on ignore silencieusement
 			}
 		}
 	}
@@ -364,10 +385,16 @@ void Server::run(void)
 {
 	while (_running)
 	{
-		int poll_result = poll(_pfds.data(), _pfds.size(), -1);  // Timeout infini
+		int poll_result = poll(_pfds.data(), _pfds.size(), 100);  // Timeout de 100ms - bon compromis !
 
 		if (poll_result < 0)
 		{
+			// Si poll() est interrompu par un signal, c'est normal
+			if (errno == EINTR)
+				continue;
+			// Si le serveur est en cours d'arrêt, c'est normal aussi
+			if (!_running)
+				break;
 			std::cerr << "Error: poll() failed" << std::endl;
 			break;
 		}
@@ -408,12 +435,14 @@ void Server::run(void)
 void Server::stop(void)
 {
 	_running = false;
+	
 	std::map<int, Clients>::iterator it;
 
 	for (it = _clients.begin(); it != _clients.end(); ++it)
 		close(it->first);
 	_clients.clear();
 	_pfds.clear();
+	
 	if (_server_fd != -1)
 	{
 		close(_server_fd);
@@ -427,6 +456,14 @@ void Server::stop(void)
 Channels	*Server::getChannel(const std::string &name)
 {
 	std::map<std::string, Channels>::iterator it = _channels.find(name);
+	if (it != _channels.end())
+		return &(it->second);
+	return (NULL);
+}
+
+const Channels	*Server::getChannel(const std::string &name) const
+{
+	std::map<std::string, Channels>::const_iterator it = _channels.find(name);
 	if (it != _channels.end())
 		return &(it->second);
 	return (NULL);

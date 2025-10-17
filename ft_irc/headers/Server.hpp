@@ -69,16 +69,18 @@ class	Server
 		Server	&operator=(const Server &rhs);
 
 		// Getters de base
-		std::string	getServerName(void) const;
-		int			getServerFd(void) const;
-		int			getPort(void) const;
-		std::string	getPassword(void) const;
-		bool		isRunning(void) const;
-		Clients		*getClient(int fd);
-		Clients		*getClientByNickname(const std::string &nickname);
-		void		removeClient(int fd);
-		void		removeClient(Clients* client);
-		size_t		getClientCount(void) const;
+		std::string		getServerName(void) const;
+		int				getServerFd(void) const;
+		int				getPort(void) const;
+		std::string		getPassword(void) const;
+		bool			isRunning(void) const;
+		Clients			*getClient(int fd);
+		const Clients	*getClient(int fd) const;
+		Clients			*getClientByNickname(const std::string &nickname);
+		const Clients	*getClientByNickname(const std::string &nickname) const;
+		void			removeClient(int fd);
+		void			removeClient(Clients* client);
+		size_t			getClientCount(void) const;
 
 		// SERVER activation N deactivation
 		void	start(void);		// Setup complet du serveur
@@ -91,9 +93,10 @@ class	Server
 		void	removeClientFromAllChannels(Clients* client);
 
 		// CHANNELS part
-		Channels	*getChannel(const std::string &name);
-		Channels	*createChannel(const std::string &name);
-		void		removeChannel(const std::string &name);
+		Channels		*getChannel(const std::string &name);
+		const Channels	*getChannel(const std::string &name) const;
+		Channels		*createChannel(const std::string &name);
+		void			removeChannel(const std::string &name);
 		
 		// SERVER utilities for CommandHandler
 		bool		isNicknameInUse(const std::string& nickname) const;

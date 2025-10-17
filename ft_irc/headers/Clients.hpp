@@ -64,11 +64,9 @@ class	Clients
 
 		bool		messageComplete(void) const;
 		std::string	extractMessage(void);
-		void		eraseFromBuffer(size_t pos);
 
 		bool	isAuthenticated(void) const;
 		bool	isConnected(void) const;
-		void	disconnect(void);
 };
 
 #endif

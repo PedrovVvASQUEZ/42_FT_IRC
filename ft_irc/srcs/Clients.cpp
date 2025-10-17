@@ -145,12 +145,6 @@ std::string	Clients::extractMessage(void)
 	return (message);
 }
 
-void	Clients::eraseFromBuffer(size_t pos)
-{
-	if (pos <= _buffer.length())
-		_buffer.erase(0, pos);
-}
-
 bool	Clients::isAuthenticated(void) const
 {
 	return (this->_cstate == AUTHENTIFICATED);
@@ -159,9 +153,4 @@ bool	Clients::isAuthenticated(void) const
 bool	Clients::isConnected(void) const
 {
 	return (this->_cstate == CONNECTED || this->_cstate == AUTHENTIFICATED);
-}
-
-void	Clients::disconnect(void)
-{
-	_cstate = DISCONNECTED;
 }

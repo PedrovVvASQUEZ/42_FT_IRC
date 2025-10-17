@@ -49,18 +49,15 @@ class	Channels
 		bool	addMember(Clients* client);
 		bool	removeMember(Clients* client);
 		bool	isMember(Clients* client) const;
-		bool	isMember(int clientFd) const;  // Surcharge pour compatibilité
 		bool	isEmpty(void) const;
 
 		// Gestion des opérateurs
 		bool	addOperator(Clients* client);
 		bool	removeOperator(Clients* client);
 		bool	isOperator(Clients* client) const;
-		bool	isOperator(int clientFd) const;  // Surcharge pour compatibilité
 
 		// Utilitaires
 		std::string	getMembersList(void) const;
-		void		broadcastToMembers(const std::string &message, Clients* excludeClient = NULL) const;
 		Clients*	findMemberByFd(int fd) const;
 };
 
