@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:21 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/03 18:42:17 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/20 18:59:07 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,12 @@
 
 //==================== Contructors N Destructor ===================//
 
-Clients::Clients(void) : _cfd(-1), _cstate(CONNECTED)
+Clients::Clients(void) : _cfd(-1), _cstate(CONNECTED), _passwordValid(false)
 {
 	return ;
 }
 
-Clients::Clients(int fd, const std::string &hostnameIP) : _cfd(fd), _hostnameIP(hostnameIP), _cstate(CONNECTED)
+Clients::Clients(int fd, const std::string &hostnameIP) : _cfd(fd), _hostnameIP(hostnameIP), _cstate(CONNECTED), _passwordValid(false)
 {
 	return ;
 }
@@ -27,7 +27,7 @@ Clients::Clients(int fd, const std::string &hostnameIP) : _cfd(fd), _hostnameIP(
 Clients::Clients(const Clients &rhs) : _cfd(rhs._cfd), _nickname(rhs._nickname),
 										_username(rhs._username), _realname(rhs._realname),
 										_hostnameIP(rhs._hostnameIP), _cstate(rhs._cstate),
-										_buffer(rhs._buffer)
+										_buffer(rhs._buffer), _passwordValid(rhs._passwordValid)
 {
 	return ;
 }
@@ -50,6 +50,7 @@ Clients	&Clients::operator=(const Clients &rhs)
 		_hostnameIP = rhs._hostnameIP;
 		_cstate = rhs._cstate;
 		_buffer = rhs._buffer;
+		_passwordValid = rhs._passwordValid;
 	}
 	return (*this);
 }
@@ -96,6 +97,11 @@ std::string	&Clients::getBuffer(void)
 	return (this->_buffer);
 }
 
+bool	Clients::isPasswordValid(void) const
+{
+	return (this->_passwordValid);
+}
+
 //==================== Setters ===================//
 
 void	Clients::setNickname(const std::string &nickname)
@@ -126,6 +132,11 @@ void	Clients::appendToBuffer(const std::string &data)
 void	Clients::clearBuffer(void)
 {
 	_buffer.clear();
+}
+
+void	Clients::setPasswordValid(bool valid)
+{
+	_passwordValid = valid;
 }
 
 //==================== Fonctions publics ===================//

@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:11:13 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/01 18:45:16 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/20 18:59:07 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ class	Clients
 		std::string	_hostnameIP;
 		ClientState	_cstate;
 		std::string	_buffer;
+		bool		_passwordValid;
 
 	public:
 		Clients(void);
@@ -53,6 +54,7 @@ class	Clients
 		ClientState			getState(void) const;
 		const std::string&	getBuffer(void) const;
 		std::string&		getBuffer(void);
+		bool				isPasswordValid(void) const;
 
 		// Setters
 		void	setNickname(const std::string &nickname);
@@ -61,6 +63,7 @@ class	Clients
 		void	setState(ClientState state);
 		void	appendToBuffer(const std::string &data);
 		void	clearBuffer(void);
+		void	setPasswordValid(bool valid);
 
 		bool		messageComplete(void) const;
 		std::string	extractMessage(void);

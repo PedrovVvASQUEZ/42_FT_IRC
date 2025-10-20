@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:34 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:44:50 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/20 18:59:07 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,7 +145,8 @@ void CommandHandler::processCommand(Clients& client, const Messages& message)
 	}
 	
 	std::string command = message.getCommand();
-	std::cout << "📨 Processing command from client " << client.getFd() << ": " << command << std::endl;
+	std::cout << "📨 Processing command from client " << client.getFd() << ": '" << command << "'" << std::endl;
+	std::cout << "🔍 Message valid: " << (message.isValid() ? "YES" : "NO") << std::endl;
 	
 	// Convertir la commande en majuscules pour la comparaison
 	command = _toUpper(command);
@@ -239,6 +240,7 @@ void CommandHandler::_handlePass(Clients& client, const Messages& message)
 	if (password == _server->getPassword())
 	{
 		// Mot de passe correct - le client peut maintenant s'authentifier
+		client.setPasswordValid(true);
 		std::cout << "🔐 Client " << client.getFd() << " provided correct password" << std::endl;
 		// On ne change pas encore l'état, on attend NICK et USER
 	}
@@ -246,7 +248,8 @@ void CommandHandler::_handlePass(Clients& client, const Messages& message)
 	{
 		_sendNumericReply(client, ERR_PASSWDMISMATCH, ":Password incorrect");
 		std::cout << "❌ Client " << client.getFd() << " failed authentication" << std::endl;
-		// On pourrait fermer la connexion ici si on veut être strict
+		// Marquer le client pour déconnexion
+		client.setState(DISCONNECTED);
 	}
 }
 
@@ -257,26 +260,21 @@ void CommandHandler::_handleNick(Clients& client, const Messages& message)
 		_sendNumericReply(client, ERR_NONICKNAMEGIVEN, ":No nickname given");
 		return;
 	}
-	
 	std::string nickname = message.getParam(0);
-	
 	// Valider le nickname
 	if (!_isValidNickname(nickname))
 	{
 		_sendNumericReply(client, ERR_ERRONEUSNICKNAME, nickname + " :Erroneous nickname");
 		return;
 	}
-	
 	// Vérifier si le nickname est déjà utilisé
 	if (_server->isNicknameInUse(nickname))
 	{
 		_sendNumericReply(client, ERR_NICKNAMEINUSE, nickname + " :Nickname is already in use");
 		return;
 	}
-	
 	std::string old_nick = client.getNickname();
 	client.setNickname(nickname);
-	
 	if (old_nick.empty())
 	{
 		std::cout << "📛 Client " << client.getFd() << " set nickname to: " << nickname << std::endl;
@@ -284,10 +282,22 @@ void CommandHandler::_handleNick(Clients& client, const Messages& message)
 	else
 	{
 		std::cout << "📛 Client " << client.getFd() << " changed nickname from " << old_nick << " to " << nickname << std::endl;
+		
+		// Si le client est authentifié, notifier le changement de nickname
+		if (client.getState() == AUTHENTIFICATED)
+		{
+			std::string nick_change = ":" + old_nick + "!" + client.getUsername() + "@" + client.getHostname() + " NICK " + nickname;
+			
+			// Envoyer la notification au client lui-même
+			_server->sendMessage(client.getFd(), nick_change);
+			
+			// TODO: Envoyer aux autres clients dans les mêmes channels
+			// Pour l'instant, on ne gère que la notification au client qui change
+		}
 	}
-	
-	// Si toutes les infos sont présentes et pas encore authentifié, envoyer la séquence de bienvenue
-	if (!client.getNickname().empty() && !client.getUsername().empty() && client.getState() != AUTHENTIFICATED)
+	// Si toutes les infos sont présentes, mot de passe valide et pas encore authentifié, envoyer la séquence de bienvenue
+	if (!client.getNickname().empty() && !client.getUsername().empty() && 
+		client.isPasswordValid() && client.getState() != AUTHENTIFICATED)
 	{
 		client.setState(AUTHENTIFICATED);
 		_sendWelcomeSequence(client);
@@ -317,8 +327,9 @@ void CommandHandler::_handleUser(Clients& client, const Messages& message)
 	
 	std::cout << "👤 Client " << client.getFd() << " set user info: " << username << " (" << realname << ")" << std::endl;
 	
-	// Si toutes les infos sont présentes et pas encore authentifié, envoyer la séquence de bienvenue
-	if (!client.getNickname().empty() && !client.getUsername().empty() && client.getState() != AUTHENTIFICATED)
+	// Si toutes les infos sont présentes, mot de passe valide et pas encore authentifié, envoyer la séquence de bienvenue
+	if (!client.getNickname().empty() && !client.getUsername().empty() && 
+		client.isPasswordValid() && client.getState() != AUTHENTIFICATED)
 	{
 		client.setState(AUTHENTIFICATED);
 		_sendWelcomeSequence(client);
