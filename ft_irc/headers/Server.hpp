@@ -57,6 +57,7 @@ class	Server
 		void	_handleClientMessage(int client_fd);	// Lit et traite UN message
 		void	_clientRemover(int client_fd);
 		void	_processMessage(Clients &Client, const Messages &message);
+		bool	_processMessagesFromBuffer(Clients *client, int client_fd, const std::string &delimiter, int bytes_to_skip);
 
 	public:
 		// Constructeurs / Destructeur

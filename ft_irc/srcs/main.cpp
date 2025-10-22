@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 
 // Le format réseau universel est le big-endian pour l'adresse IP et les ports
 
-// 🔌 Analogie simple :
+// Analogie simple :
 // Imaginez une prise électrique dans le mur :
 
 // La socket = la prise
