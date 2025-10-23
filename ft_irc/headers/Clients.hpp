@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:11:13 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/20 18:59:07 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,6 @@ class	Clients
 		void	setRealname(const std::string &realname);
 		void	setState(ClientState state);
 		void	appendToBuffer(const std::string &data);
-		void	clearBuffer(void);
 		void	setPasswordValid(bool valid);
 
 		bool		messageComplete(void) const;

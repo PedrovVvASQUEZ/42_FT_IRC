@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:45 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:37:30 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,62 +180,4 @@ size_t Messages::getParamCount() const
 bool Messages::isValid() const
 {
 	return _isValid;
-}
-
-// Méthodes utilitaires
-bool Messages::hasPrefix() const
-{
-	return !_prefix.empty();
-}
-
-bool Messages::isNumericReply() const
-{
-	return _command.size() == 3 && std::isdigit(_command[0]) && 
-		   std::isdigit(_command[1]) && std::isdigit(_command[2]);
-}
-
-std::string Messages::toString() const
-{
-	std::string result;
-	
-	if (!_prefix.empty())
-		result += ":" + _prefix + " ";
-	
-	result += _command;
-	
-	for (size_t i = 0; i < _params.size(); i++)
-	{
-		result += " ";
-		if (i == _params.size() - 1 && _params[i].find(' ') != std::string::npos)
-			result += ":" + _params[i];
-		else
-			result += _params[i];
-	}
-	
-	return result;
-}
-
-// Méthodes statiques pour créer des messages
-Messages Messages::createMessage(const std::string& command, const std::vector<std::string>& params)
-{
-	Messages msg;
-	msg._command = command;
-	msg._params = params;
-	msg._isValid = msg._validateCommand();
-	msg._rawMessage = msg.toString();
-	return msg;
-}
-
-Messages Messages::createReply(const std::string& prefix, const std::string& numeric, 
-							const std::string& target, const std::string& message)
-{
-	Messages msg;
-	msg._prefix = prefix;
-	msg._command = numeric;
-	msg._params.push_back(target);
-	if (!message.empty())
-		msg._params.push_back(message);
-	msg._isValid = msg._validateCommand();
-	msg._rawMessage = msg.toString();
-	return msg;
 }

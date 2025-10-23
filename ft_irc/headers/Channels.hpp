@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:11:27 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:41:10 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ class	Channels
 
 	public:
 		// Constructeurs/Destructeur
+		public:
 		Channels(void);
 		Channels(const std::string &name);
 		Channels(const Channels &rhs);
@@ -58,7 +59,6 @@ class	Channels
 
 		// Utilitaires
 		std::string	getMembersList(void) const;
-		Clients*	findMemberByFd(int fd) const;
 };
 
 #endif

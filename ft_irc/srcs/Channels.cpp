@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:08 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:41:03 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -162,16 +162,4 @@ std::string	Channels::getMembersList(void) const
 		members_list += (*it)->getNickname();
 	}
 	return members_list;
-}
-
-Clients* Channels::findMemberByFd(int fd) const
-{
-	std::set<Clients*>::const_iterator it;
-	
-	for (it = _members.begin(); it != _members.end(); ++it)
-	{
-		if ((*it)->getFd() == fd)
-			return *it;
-	}
-	return NULL;
 }

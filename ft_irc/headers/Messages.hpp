@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:12:10 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:37:29 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,16 +50,6 @@ class Messages
 		std::string					getParam(size_t index) const;
 		size_t						getParamCount() const;
 		bool						isValid() const;
-
-		// Méthodes utilitaires
-		bool						hasPrefix() const;
-		bool						isNumericReply() const;
-		std::string					toString() const;
-
-		// Méthodes statiques pour créer des messages
-		static Messages				createMessage(const std::string& command, const std::vector<std::string>& params);
-		static Messages				createReply(const std::string& prefix, const std::string& numeric, 
-											   const std::string& target, const std::string& message);
 };
 
 #endif

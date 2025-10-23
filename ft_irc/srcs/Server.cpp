@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:53 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:37:33 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:35:29 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -351,19 +351,6 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	std::cout << "Sent to client: " << client_fd << ": " << message << std::endl;
 }
 
-void	Server::broadcastMessage(const std::string &message)
-{
-	std::map<int, Clients>::iterator it;
-
-	for (it = _clients.begin(); it != _clients.end(); ++it)
-	{
-		if (it->second.isConnected())
-		{
-			sendMessage(it->first, message);
-		}
-	}
-}
-
 void	Server::removeClientFromAllChannels(Clients* client)
 {
 	if (!client)
@@ -404,7 +391,6 @@ void Server::run(void)
 	while (_running)
 	{
 		int poll_result = poll(_pfds.data(), _pfds.size(), 100);  // Timeout de 100ms - bon compromis !
-
 		if (poll_result < 0)
 		{
 			// Si poll() est interrompu par un signal, c'est normal
@@ -454,19 +440,30 @@ void Server::stop(void)
 {
 	_running = false;
 	
+	std::cout << "Cleaning up server resources..." << std::endl;
+	
+	// Fermer toutes les connexions clients
 	std::map<int, Clients>::iterator it;
-
 	for (it = _clients.begin(); it != _clients.end(); ++it)
+	{
 		close(it->first);
+	}
 	_clients.clear();
+	
+	// Nettoyer tous les channels
+	_channels.clear();
+	
+	// Nettoyer les descripteurs de poll
 	_pfds.clear();
 	
+	// Fermer le socket serveur
 	if (_server_fd != -1)
 	{
 		close(_server_fd);
 		_server_fd = -1;
 	}
-	std::cout << "Server stopped" << std::endl;
+	
+	std::cout << "Server stopped cleanly" << std::endl;
 }
 
 //==================== CHANNELS PART ===================//

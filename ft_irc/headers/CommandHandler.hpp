@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:11:54 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/20 16:30:39 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,14 +73,10 @@
 # include <sstream>
 # include <algorithm>
 # include <cctype>
+# include <iomanip>
 
 // Forward declarations
 class Server;
-# include <iomanip>
-
-class	Server;
-class	Clients;
-class	Channel;
 
 class	CommandHandler
 {

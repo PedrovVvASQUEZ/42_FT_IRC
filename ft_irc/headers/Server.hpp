@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:10:58 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/14 18:38:19 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,6 @@ class	Server
 
 		// CLIENT part
 		void	sendMessage(int client_fd, const std::string& message);	// Envoie UN message
-		void	broadcastMessage(const std::string &message);
 		void	removeClientFromAllChannels(Clients* client);
 
 		// CHANNELS part

@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:21 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/21 16:16:41 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,11 +127,6 @@ void	Clients::setState(ClientState state)
 void	Clients::appendToBuffer(const std::string &data)
 {
 	_buffer += data;
-}
-
-void	Clients::clearBuffer(void)
-{
-	_buffer.clear();
 }
 
 void	Clients::setPasswordValid(bool valid)

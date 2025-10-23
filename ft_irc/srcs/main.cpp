@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 17:17:45 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/03 18:59:24 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/10/23 18:40:26 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,13 @@ Server	*g_server = NULL;
 
 void signalHandler(int signal)
 {
-	if (signal == SIGINT && g_server)
+	if ((signal == SIGINT || signal == SIGQUIT) && g_server)
 	{
-		std::cout << "\nShutting down server..." << std::endl;
+		std::cout << "\nReceived signal " << signal << ". Shutting down server gracefully..." << std::endl;
 		g_server->stop();
+		delete g_server;
+		g_server = NULL;
+		exit(0);
 	}
 }
 
@@ -45,11 +48,13 @@ int main(int argc, char* argv[])
 		std::cerr << "Error: Password cannot be empty" << std::endl;
 		return 1;
 	}
-	Server server(port, password);
-	g_server = &server;
+	Server *server = new Server(port, password);
+	g_server = server;
 	signal(SIGINT, signalHandler);
-	server.start();
-	server.run();
+	signal(SIGQUIT, signalHandler); // Ajouter le gestionnaire pour SIGQUIT
+	server->start();
+	server->run();
+	delete server;
 	return (0);
 }
 
