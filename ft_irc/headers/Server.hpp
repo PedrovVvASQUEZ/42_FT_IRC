@@ -26,6 +26,7 @@
 # include <map>
 # include <algorithm>
 # include <poll.h>
+# include <fcntl.h>
 # include "Clients.hpp"
 # include "Channels.hpp"
 # include "CommandHandler.hpp"
@@ -52,6 +53,7 @@ class	Server
 		void	_createSocket(void);
 		void	_bindSocket(void);
 		void	_listenSocket(void);
+		void	_setNonBlocking(int fd);
 
 		void	_acceptNewClient(void);	// Accept UNE connexion
 		void	_handleClientMessage(int client_fd);	// Lit et traite UN message

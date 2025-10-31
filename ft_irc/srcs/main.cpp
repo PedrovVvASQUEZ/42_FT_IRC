@@ -13,7 +13,7 @@
 #include "Server.hpp"
 #include <signal.h>
 
-// Client de reference netcat
+// Client de reference irssi
 
 Server	*g_server = NULL;
 
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
 	Server *server = new Server(port, password);
 	g_server = server;
 	signal(SIGINT, signalHandler);
-	signal(SIGQUIT, signalHandler); // Ajouter le gestionnaire pour SIGQUIT
+	signal(SIGQUIT, signalHandler);
 	server->start();
 	server->run();
 	delete server;

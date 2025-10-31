@@ -153,6 +153,8 @@ void	Server::_createSocket()
 		close(_server_fd);
 		exit(1);
 	}
+	// Configurer le socket en mode non-bloquant
+	_setNonBlocking(_server_fd);
 	std::cout << "Socket created successfully" << std::endl;
 }
 
@@ -182,6 +184,18 @@ void	Server::_listenSocket()
 	std::cout << "Server listening on port " << _port << std::endl;
 }
 
+void	Server::_setNonBlocking(int fd)
+{
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		std::cerr << "Error: Failed to set non-blocking mode for FD " << fd << std::endl;
+	}
+	else
+	{
+		std::cout << "FD " << fd << " set to non-blocking mode" << std::endl;
+	}
+}
+
 void	Server::_acceptNewClient()
 {
 	struct sockaddr_in	client_addr;
@@ -200,6 +214,8 @@ void	Server::_acceptNewClient()
 		close(new_client_fd);
 		return ;
 	}
+	// Configurer le socket client en mode non-bloquant
+	_setNonBlocking(new_client_fd);
 	// Creer nouveau Client
 	std::string			hostname = inet_ntoa(client_addr.sin_addr);
 	Clients				new_client(new_client_fd, hostname);
