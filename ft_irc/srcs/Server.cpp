@@ -153,7 +153,6 @@ void	Server::_createSocket()
 		close(_server_fd);
 		exit(1);
 	}
-	// Configurer le socket en mode non-bloquant
 	_setNonBlocking(_server_fd);
 	std::cout << "Socket created successfully" << std::endl;
 }
@@ -214,9 +213,7 @@ void	Server::_acceptNewClient()
 		close(new_client_fd);
 		return ;
 	}
-	// Configurer le socket client en mode non-bloquant
 	_setNonBlocking(new_client_fd);
-	// Creer nouveau Client
 	std::string			hostname = inet_ntoa(client_addr.sin_addr);
 	Clients				new_client(new_client_fd, hostname);
 	_clients[new_client_fd] = new_client;
@@ -232,7 +229,6 @@ void	Server::_acceptNewClient()
 
 void Server::_clientRemover(int client_fd)
 {
-	// Supprimer de la map des clients
 	_clients.erase(client_fd);
 	std::vector<struct pollfd>::iterator it;
 	for (it = _pfds.begin(); it != _pfds.end(); ++it)
@@ -249,7 +245,6 @@ void Server::_clientRemover(int client_fd)
 
 void Server::_processMessage(Clients& client, const Messages &message)
 {
-	// Utiliser le CommandHandler pour traiter les commandes IRC
 	_commandHandler.processCommand(client, message);
 }
 
@@ -257,17 +252,12 @@ void	Server::_handleClientMessage(int client_fd)
 {
 	char		buffer[512];
 	std::memset(buffer, 0, 512);
-	
-	// Sur Linux : recv() peut retourner EAGAIN en mode non-bloquant
-	// Mais avec poll(), on sait déjà que des données sont disponibles
 	ssize_t		bytes_received = recv(client_fd, buffer, 511, 0);
 
 	if (bytes_received < 0)
 	{
-		// Gestion spéciale pour mode non-bloquant
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
-			// Pas de données disponibles maintenant, on reviendra plus tard
 			return;
 		}
 		std::cerr << "Error receiving from client " << client_fd << ": " << strerror(errno) << std::endl;
@@ -287,11 +277,7 @@ void	Server::_handleClientMessage(int client_fd)
 		return;
 	}
 	client->appendToBuffer(std::string(buffer, bytes_received));
-	
-	// Essayer d'abord \r\n (standard IRC)
 	bool found_crlf = _processMessagesFromBuffer(client, client_fd, "\r\n", 2);
-	
-	// Si aucun \r\n trouvé, essayer \n seul (compatibilité netcat/telnet)
 	if (!found_crlf)
 		_processMessagesFromBuffer(client, client_fd, "\n", 1);
 }
@@ -311,7 +297,6 @@ bool	Server::_processMessagesFromBuffer(Clients *client, int client_fd, const st
 		// Nettoyer le message (enlever \r final si présent)
 		if (!raw_message.empty() && raw_message[raw_message.length() - 1] == '\r')
 			raw_message.erase(raw_message.length() - 1);
-			
 		if (!raw_message.empty())
 		{
 			std::cout << "Received from client " << client_fd << ": " << raw_message << std::endl;
@@ -346,11 +331,8 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	
 	if (bytes_sent < 0)
 	{
-		// Gestion pour mode non-bloquant
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
-			// Buffer de sortie plein, on devrait stocker le message pour plus tard
-			// Pour l'instant, on ignore (simplifié)
 			std::cout << "Send buffer full for client " << client_fd << std::endl;
 			return;
 		}
@@ -359,11 +341,7 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 		return;
 	}
 	else if (bytes_sent < (ssize_t)full_message.length())
-	{
-		// Envoi partiel - en mode non-bloquant, on devrait gérer ça
 		std::cout << "Partial send to client " << client_fd << ": " << bytes_sent << "/" << full_message.length() << std::endl;
-	}
-	
 	std::cout << "Sent to client: " << client_fd << ": " << message << std::endl;
 }
 
@@ -382,8 +360,8 @@ void	Server::removeClientFromAllChannels(Clients* client)
 		}
 	}
 }
-//==================== SERVER activation N deactivation ===================//
 
+//==================== SERVER activation N deactivation ===================//
 
 void	Server::start(void)
 {
@@ -391,13 +369,11 @@ void	Server::start(void)
 	_createSocket();
 	_bindSocket();
 	_listenSocket();
-	// Ajouter le server socket à la liste de surveillance
 	struct pollfd server_pollfd;
 	server_pollfd.fd = this->_server_fd;
 	server_pollfd.events = POLLIN;
 	server_pollfd.revents = 0;
 	this->_pfds.push_back(server_pollfd);
-
 	this->_running = true;
 	std::cout << "Server ready! Waiting for connections..." << std::endl;
 }
@@ -406,23 +382,18 @@ void Server::run(void)
 {
 	while (_running)
 	{
-		int poll_result = poll(_pfds.data(), _pfds.size(), 100);  // Timeout de 100ms - bon compromis !
+		int poll_result = poll(_pfds.data(), _pfds.size(), 100);
 		if (poll_result < 0)
 		{
-			// Si poll() est interrompu par un signal, c'est normal
 			if (errno == EINTR)
 				continue;
-			// Si le serveur est en cours d'arrêt, c'est normal aussi
 			if (!_running)
 				break;
 			std::cerr << "Error: poll() failed" << std::endl;
 			break;
 		}
 		if (poll_result == 0)
-		{
 			continue;
-		}
-		// Vérifier chaque file descriptor
 		for (size_t i = 0; i < _pfds.size(); ++i)
 		{
 			if (_pfds[i].revents & POLLIN)
@@ -447,7 +418,7 @@ void Server::run(void)
 					--i; // Ajuster l'index car le vecteur a changé
 				}
 			}
-			_pfds[i].revents = 0;  // Nettoyer les events
+			_pfds[i].revents = 0;
 		}
 	}
 }
@@ -457,22 +428,14 @@ void Server::stop(void)
 	_running = false;
 	
 	std::cout << "Cleaning up server resources..." << std::endl;
-	
-	// Fermer toutes les connexions clients
 	std::map<int, Clients>::iterator it;
 	for (it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		close(it->first);
 	}
 	_clients.clear();
-	
-	// Nettoyer tous les channels
 	_channels.clear();
-	
-	// Nettoyer les descripteurs de poll
 	_pfds.clear();
-	
-	// Fermer le socket serveur
 	if (_server_fd != -1)
 	{
 		close(_server_fd);
