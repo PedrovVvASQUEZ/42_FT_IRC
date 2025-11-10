@@ -98,11 +98,8 @@ bool	Channels::removeMember(Clients* client)
 {
 	if (!client)
 		return (false);
-	
-	// Retirer automatiquement les privilèges d'opérateur si applicable
 	if (isOperator(client))
 		_operators.erase(client);
-	
 	return (_members.erase(client) > 0);
 }
 
@@ -118,11 +115,8 @@ bool	Channels::removeOperator(Clients* client)
 {
 	if (!client)
 		return (false);
-	
-	// Empêcher de retirer le dernier opérateur s'il y a encore des membres
 	if (_operators.size() == 1 && _members.size() > 1 && isOperator(client))
 		return (false);
-	
 	return (_operators.erase(client) > 0);
 }
 
@@ -155,7 +149,6 @@ std::string	Channels::getMembersList(void) const
 		if (!members_list.empty())
 			members_list += " ";
 		
-		// Ajouter le préfixe d'opérateur si nécessaire
 		if (isOperator(*it))
 			members_list += "@";
 		

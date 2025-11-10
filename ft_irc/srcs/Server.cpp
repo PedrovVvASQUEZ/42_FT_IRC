@@ -45,13 +45,12 @@ Server	&Server::operator=(const Server &rhs)
 {
 	if (&rhs != this)
 	{
-		// Fermer les anciennes connexions avant de copier
 		stop();
 		_port = rhs._port;
 		_password = rhs._password;
-		_server_fd = -1;  // Reset - il faudra redémarrer le serveur
-		_running = false;  // Reset
-		_commandHandler.setServer(this);  // Réinitialiser le CommandHandler
+		_server_fd = -1;
+		_running = false;
+		_commandHandler.setServer(this);
 		std::memset(&_server_addr, 0, sizeof(_server_addr));
 	}
 	return (*this);
@@ -101,7 +100,7 @@ Clients* Server::getClientByNickname(const std::string& nickname)
 	for (it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		if (it->second.getNickname() == nickname)
-			return &(it->second);
+			return (&(it->second));
 	}
 	return (NULL);
 }
@@ -112,7 +111,7 @@ const Clients* Server::getClientByNickname(const std::string& nickname) const
 	for (it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		if (it->second.getNickname() == nickname)
-			return &(it->second);
+			return (&(it->second));
 	}
 	return (NULL);
 }
@@ -125,13 +124,13 @@ void	Server::removeClient(int fd)
 void	Server::removeClient(Clients* client)
 {
 	if (!client)
-		return;
+		return ;
 	_clientRemover(client->getFd());
 }
 
 size_t Server::getClientCount(void) const
 {
-	return _clients.size();
+	return (_clients.size());
 }
 
 //==================== PRIVATE member functions ===================//
@@ -300,8 +299,6 @@ bool	Server::_processMessagesFromBuffer(Clients *client, int client_fd, const st
 		if (!raw_message.empty())
 		{
 			std::cout << "Received from client " << client_fd << ": " << raw_message << std::endl;
-			
-			// Créer un objet Messages pour parser le message IRC
 			Messages msg(raw_message);
 			if (msg.isValid())
 			{
@@ -328,7 +325,6 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	}
 	std::string full_message = message + "\r\n";
 	ssize_t bytes_sent = send(client_fd, full_message.c_str(), full_message.length(), 0);
-	
 	if (bytes_sent < 0)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)

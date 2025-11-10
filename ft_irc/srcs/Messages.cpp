@@ -36,7 +36,6 @@ Messages::~Messages()
 	return ;
 }
 
-// Opérateur d'assignation
 Messages& Messages::operator=(const Messages& other)
 {
 	if (this != &other)
@@ -47,53 +46,46 @@ Messages& Messages::operator=(const Messages& other)
 		_params = other._params;
 		_isValid = other._isValid;
 	}
-	return *this;
+	return (*this);
 }
-// Méthodes privées
+
 void Messages::_parseMessage()
 {
 	if (_rawMessage.empty())
-		return;
+		return ;
 	std::string message = _rawMessage;
-	// Enlever le CRLF de fin si présent
 	if (message.size() >= 2 && message.substr(message.size() - 2) == "\r\n")
 		message = message.substr(0, message.size() - 2);
 	else if (message.size() >= 1 && (message[message.size() - 1] == '\r' || message[message.size() - 1] == '\n'))
 		message = message.substr(0, message.size() - 1);
 	size_t pos = 0;
-	// 1. Parser le préfixe (optionnel, commence par ':')
 	if (message[0] == ':')
 	{
 		pos = message.find(' ');
 		if (pos == std::string::npos)
-			return; // Message invalide
+			return ;
 		_prefix = message.substr(1, pos - 1);
 		pos++;
 	}
-	// 2. Parser la commande
 	size_t commandStart = pos;
 	pos = message.find(' ', commandStart);
 	if (pos == std::string::npos)
 	{
-		// Pas de paramètres
 		_command = message.substr(commandStart);
 		_isValid = _validateCommand();
-		return;
+		return ;
 	}
 	_command = message.substr(commandStart, pos - commandStart);
 	pos++;
-	// 3. Parser les paramètres
 	while (pos < message.size())
 	{
 		if (message[pos] == ':')
 		{
-			// Paramètre trailing (le reste du message)
 			_params.push_back(message.substr(pos + 1));
-			break;
+			break ;
 		}
 		else
 		{
-			// Paramètre normal (jusqu'au prochain espace)
 			size_t paramEnd = message.find(' ', pos);
 			if (paramEnd == std::string::npos)
 			{
@@ -113,71 +105,69 @@ void Messages::_parseMessage()
 bool Messages::_validateCommand() const
 {
 	if (_command.empty())
-		return false;
-	// Commandes IRC standard
+		return (false);
 	if (_command == "PASS" || _command == "NICK" || _command == "USER" ||
 		_command == "JOIN" || _command == "PART" || _command == "QUIT" ||
 		_command == "PRIVMSG" || _command == "NOTICE" || _command == "KICK" ||
 		_command == "MODE" || _command == "TOPIC" || _command == "INVITE" ||
 		_command == "PING" || _command == "PONG" || _command == "WHO" ||
 		_command == "WHOIS" || _command == "LIST" || _command == "NAMES")
-		return true;
-	// Réponses numériques (001-999)
+		return (true);
 	if (_command.size() == 3)
 	{
 		for (size_t i = 0; i < 3; i++)
 		{
 			if (!std::isdigit(_command[i]))
-				return false;
+				return (false);
 		}
-		return true;
+		return (true);
 	}
-	return false;
+	return (false);
 }
 
 std::string Messages::_trim(const std::string& str) const
 {
 	size_t start = str.find_first_not_of(" \t\r\n");
 	if (start == std::string::npos)
-		return "";
+		return ("");
 	size_t end = str.find_last_not_of(" \t\r\n");
-	return str.substr(start, end - start + 1);
+	return (str.substr(start, end - start + 1));
 }
 
 // Getters
 std::string Messages::getRawMessage() const
 {
-	return _rawMessage;
+	return (_rawMessage);
 }
 
 std::string Messages::getPrefix() const
 {
-	return _prefix;
+	return (_prefix);
 }
 
 std::string Messages::getCommand() const
 {
-	return _command;
+	return (_command);
 }
 
 std::vector<std::string> Messages::getParams() const
 {
-	return _params;
+	return (_params);
 }
 
 std::string Messages::getParam(size_t index) const
 {
 	if (index < _params.size())
-		return _params[index];
-	return "";
+		return (_params[index]);
+	return ("");
 }
 
 size_t Messages::getParamCount() const
 {
-	return _params.size();
+	return (_params.size());
 }
 
 bool Messages::isValid() const
 {
-	return _isValid;
+	return (_isValid);
 }

@@ -138,13 +138,11 @@ void	Clients::setPasswordValid(bool valid)
 
 bool	Clients::messageComplete(void) const
 {
-	// Accepter \r\n (standard IRC) ou \n seul (nc interactif)
 	return (_buffer.find("\r\n") != std::string::npos || _buffer.find("\n") != std::string::npos);
 }
 
 std::string	Clients::extractMessage(void)
 {
-	// Essayer d'abord \r\n (standard IRC)
 	size_t	pos = _buffer.find("\r\n");
 	if (pos != std::string::npos)
 	{
@@ -152,8 +150,6 @@ std::string	Clients::extractMessage(void)
 		_buffer.erase(0, pos + 2);
 		return (message);
 	}
-	
-	// Sinon essayer \n seul (nc interactif)
 	pos = _buffer.find("\n");
 	if (pos != std::string::npos)
 	{
@@ -161,7 +157,6 @@ std::string	Clients::extractMessage(void)
 		_buffer.erase(0, pos + 1);
 		return (message);
 	}
-	
 	return ("");
 }
 
