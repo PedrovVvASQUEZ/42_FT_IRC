@@ -82,10 +82,8 @@ class	CommandHandler
 	private:
 		Server*		_server;
 		
-		std::vector<std::string> _split(const std::string& str, char delimiter);
 		std::string _toUpper(const std::string& str);
 		bool		_isValidNickname(const std::string& nickname);
-		bool		_isValidChannel(const std::string& channel);
 		
 		void		_handlePass(Clients& client, const Messages& message);
 		void		_handleNick(Clients& client, const Messages& message);

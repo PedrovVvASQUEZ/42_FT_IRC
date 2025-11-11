@@ -48,7 +48,6 @@ class	Clients
 		int					getFd(void) const;
 		const std::string&	getNickname(void) const;
 		const std::string&	getUsername(void) const;
-		const std::string&	getRealname(void) const;
 		const std::string&	getHostname(void) const;
 		ClientState			getState(void) const;
 		const std::string&	getBuffer(void) const;
@@ -65,7 +64,6 @@ class	Clients
 		bool		messageComplete(void) const;
 		std::string	extractMessage(void);
 
-		bool	isAuthenticated(void) const;
 		bool	isConnected(void) const;
 };
 

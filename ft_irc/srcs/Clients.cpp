@@ -82,11 +82,6 @@ const std::string	&Clients::getUsername(void) const
 	return (this->_username);
 }
 
-const std::string	&Clients::getRealname(void) const
-{
-	return (this->_realname);
-}
-
 const std::string	&Clients::getBuffer(void) const
 {
 	return (this->_buffer);
@@ -158,11 +153,6 @@ std::string	Clients::extractMessage(void)
 		return (message);
 	}
 	return ("");
-}
-
-bool	Clients::isAuthenticated(void) const
-{
-	return (this->_cstate == AUTHENTIFICATED);
 }
 
 bool	Clients::isConnected(void) const

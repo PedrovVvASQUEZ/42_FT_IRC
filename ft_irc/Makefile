@@ -41,7 +41,7 @@ all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(COMP) $(FLAGS) -o $(NAME) $(OBJS)
-	@echo "✅ IRC Server compiled successfully!"
+	@echo "IRC Server compiled"
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp $(HDRS) | $(OBJS_DIR)
 	$(COMP) $(FLAGS) -I$(HEADER_DIR) -c $< -o $@
@@ -51,11 +51,11 @@ $(OBJS_DIR):
 
 clean:
 	rm -rf $(OBJS_DIR)
-	@echo "🧹 Object files cleaned"
+	@echo "Object files cleaned"
 
 fclean: clean
 	rm -rf $(NAME)
-	@echo "🧹 Executable cleaned"
+	@echo "Objects N Executable cleaned"
 
 re: fclean all
 

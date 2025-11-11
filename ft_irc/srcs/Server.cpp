@@ -58,16 +58,6 @@ Server	&Server::operator=(const Server &rhs)
 
 //==================== Getters  ===================//
 
-int	Server::getServerFd(void) const
-{
-	return (_server_fd);
-}
-
-int	Server::getPort(void) const
-{
-	return (_port);
-}
-
 std::string	Server::getPassword(void) const
 {
 	return (_password);
@@ -119,18 +109,6 @@ const Clients* Server::getClientByNickname(const std::string& nickname) const
 void	Server::removeClient(int fd)
 {
 	_clientRemover(fd);
-}
-
-void	Server::removeClient(Clients* client)
-{
-	if (!client)
-		return ;
-	_clientRemover(client->getFd());
-}
-
-size_t Server::getClientCount(void) const
-{
-	return (_clients.size());
 }
 
 //==================== PRIVATE member functions ===================//
@@ -407,11 +385,11 @@ void Server::run(void)
 			}
 			else if (_pfds[i].revents & (POLLHUP | POLLERR | POLLNVAL))
 			{
-				std::cout << "🚪 Client FD " << _pfds[i].fd << " disconnected (revents: " << _pfds[i].revents << ")" << std::endl;
+				std::cout << "Client FD " << _pfds[i].fd << " disconnected (revents: " << _pfds[i].revents << ")" << std::endl;
 				if (_pfds[i].fd != _server_fd)
 				{
 					_clientRemover(_pfds[i].fd);
-					--i; // Ajuster l'index car le vecteur a changé
+					--i;
 				}
 			}
 			_pfds[i].revents = 0;

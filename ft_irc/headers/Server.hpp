@@ -69,8 +69,6 @@ class	Server
 		Server	&operator=(const Server &rhs);
 
 		std::string		getServerName(void) const;
-		int				getServerFd(void) const;
-		int				getPort(void) const;
 		std::string		getPassword(void) const;
 		bool			isRunning(void) const;
 		Clients			*getClient(int fd);
@@ -78,8 +76,6 @@ class	Server
 		Clients			*getClientByNickname(const std::string &nickname);
 		const Clients	*getClientByNickname(const std::string &nickname) const;
 		void			removeClient(int fd);
-		void			removeClient(Clients* client);
-		size_t			getClientCount(void) const;
 
 		void	start(void);
 		void	run(void);

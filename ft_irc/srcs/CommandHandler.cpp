@@ -39,10 +39,8 @@ CommandHandler::~CommandHandler(void)
 CommandHandler &CommandHandler::operator=(const CommandHandler &rhs)
 {
 	if (this != &rhs)
-	{
 		_server = rhs._server;
-	}
-	return *this;
+	return (*this);
 }
 
 void CommandHandler::setServer(Server* server)
@@ -52,20 +50,6 @@ void CommandHandler::setServer(Server* server)
 
 //==================== Fonctions utilitaires ===================//
 
-std::vector<std::string> CommandHandler::_split(const std::string& str, char delimiter)
-{
-	std::vector<std::string> tokens;
-	std::string token;
-	std::istringstream tokenStream(str);
-	
-	while (std::getline(tokenStream, token, delimiter))
-	{
-		if (!token.empty())
-			tokens.push_back(token);
-	}
-	return tokens;
-}
-
 std::string CommandHandler::_toUpper(const std::string& str)
 {
 	std::string result = str;
@@ -73,52 +57,26 @@ std::string CommandHandler::_toUpper(const std::string& str)
 	{
 		result[i] = std::toupper(result[i]);
 	}
-	return result;
+	return (result);
 }
 
 bool CommandHandler::_isValidNickname(const std::string& nickname)
 {
-	// Un nickname IRC valide :
-	// - 1-9 caractères
-	// - Commence par une lettre ou caractères spéciaux: [ ] \ ` _ ^ { | }
-	// - Peut contenir lettres, chiffres, - [ ] \ ` _ ^ { | }
-	
 	if (nickname.empty() || nickname.length() > 9)
-		return false;
-		
-	// Premier caractère : lettre ou caractères spéciaux IRC
+		return (false);
 	char first = nickname[0];
 	if (!std::isalpha(first) && first != '[' && first != ']' && first != '\\' && 
 		first != '`' && first != '_' && first != '^' && first != '{' && 
 		first != '|' && first != '}')
-		return false;
-	
-	// Autres caractères : alphanumériques + caractères spéciaux IRC + -
+		return (false);
 	for (size_t i = 1; i < nickname.length(); ++i)
 	{
 		char c = nickname[i];
 		if (!std::isalnum(c) && c != '-' && c != '[' && c != ']' && c != '\\' && 
 			c != '`' && c != '_' && c != '^' && c != '{' && c != '|' && c != '}')
-			return false;
+			return (false);
 	}
-	
-	return true;
-}
-
-bool CommandHandler::_isValidChannel(const std::string& channel)
-{
-	if (channel.empty() || channel.length() > 50)
-		return false;
-		
-	if (channel[0] != '#')
-		return false;
-	for (size_t i = 1; i < channel.length(); ++i)
-	{
-		char c = channel[i];
-		if (c == ' ' || c == ',' || c == '\007' || c < 32 || c > 126)
-			return false;
-	}
-	return true;
+	return (true);
 }
 
 //==================== Fonction principale ===================//
@@ -128,13 +86,12 @@ void CommandHandler::processCommand(Clients& client, const Messages& message)
 	if (!_server)
 	{
 		std::cerr << "Error: CommandHandler not properly initialized with server" << std::endl;
-		return;
+		return ;
 	}
-	
 	if (!message.isValid())
 	{
 		std::cerr << "Error: Invalid message format" << std::endl;
-		return;
+		return ;
 	}
 	std::string command = message.getCommand();
 	std::cout << "Processing command from client " << client.getFd() << ": '" << command << "'" << std::endl;
@@ -172,7 +129,7 @@ std::string CommandHandler::_formatNumericReply(int code, const std::string& tar
 {
 	std::ostringstream oss;
 	oss << ":" << _server->getServerName() << " " << std::setfill('0') << std::setw(3) << code << " " << target << " " << message << "\r\n";
-	return oss.str();
+	return (oss.str());
 }
 
 void CommandHandler::_sendNumericReply(Clients& client, int code, const std::string& params)
@@ -202,13 +159,13 @@ void CommandHandler::_handlePass(Clients& client, const Messages& message)
 	if (message.getParamCount() == 0)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PASS :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string password = message.getParam(0);
 	if (client.getState() == AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_ALREADYREGISTRED, ":You may not reregister");
-		return;
+		return ;
 	}
 	if (password == _server->getPassword())
 	{
@@ -218,7 +175,7 @@ void CommandHandler::_handlePass(Clients& client, const Messages& message)
 	else
 	{
 		_sendNumericReply(client, ERR_PASSWDMISMATCH, ":Password incorrect");
-		std::cout << "❌ Client " << client.getFd() << " failed authentication" << std::endl;
+		std::cout << "Client " << client.getFd() << " failed authentication" << std::endl;
 		client.setState(DISCONNECTED);
 	}
 }
@@ -228,19 +185,19 @@ void CommandHandler::_handleNick(Clients& client, const Messages& message)
 	if (message.getParamCount() == 0)
 	{
 		_sendNumericReply(client, ERR_NONICKNAMEGIVEN, ":No nickname given");
-		return;
+		return ;
 	}
 	std::string nickname = message.getParam(0);
 	if (!_isValidNickname(nickname))
 	{
 		_sendNumericReply(client, ERR_ERRONEUSNICKNAME, nickname + " :Erroneous nickname");
-		return;
+		return ;
 	}
 
 	if (_server->isNicknameInUse(nickname))
 	{
 		_sendNumericReply(client, ERR_NICKNAMEINUSE, nickname + " :Nickname is already in use");
-		return;
+		return ;
 	}
 	std::string old_nick = client.getNickname();
 	client.setNickname(nickname);
@@ -268,12 +225,12 @@ void CommandHandler::_handleUser(Clients& client, const Messages& message)
 	if (message.getParamCount() < 4)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "USER :Not enough parameters");
-		return;
+		return ;
 	}
 	if (client.getState() == AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_ALREADYREGISTRED, ":You may not reregister");
-		return;
+		return ;
 	}
 	std::string username = message.getParam(0);
 	std::string realname = message.getParamCount() > 3 ? message.getParam(3) : "Unknown";
@@ -294,7 +251,7 @@ void CommandHandler::_handleQuit(Clients& client, const Messages& message)
 	if (message.getParamCount() > 0)
 		quit_message = message.getParam(0);
 		
-	std::cout << "👋 Client " << client.getNickname() << " (" << client.getFd() << ") is quitting: " << quit_message << std::endl;
+	std::cout << client.getNickname() << " (" << client.getFd() << ") is quitting: " << quit_message << std::endl;
 	_server->removeClient(client.getFd());
 }
 
@@ -305,18 +262,18 @@ void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 1)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "JOIN :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string channel_name = message.getParam(0);
 	if (channel_name.empty() || channel_name[0] != '#')
 	{
 		_sendNumericReply(client, ERR_NOSUCHCHANNEL, channel_name + " :No such channel");
-		return;
+		return ;
 	}
 	Channels* channel = _server->getChannel(channel_name);
 	if (!channel)
@@ -348,7 +305,6 @@ void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 	}
 	if (channel->addMember(&client))
 	{
-		// Retirer de la liste d'invitation si présent
 		channel->removeFromInviteList(&client);
 		if (channel->getMembersCount() == 1)
 		{
@@ -390,12 +346,12 @@ void CommandHandler::_handlePart(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 1)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string channel_name = message.getParam(0);
 	std::string part_message = message.getParamCount() > 1 ? message.getParam(1) : client.getNickname();
@@ -403,12 +359,12 @@ void CommandHandler::_handlePart(Clients& client, const Messages& message)
 	if (!channel)
 	{
 		_sendNumericReply(client, ERR_NOSUCHCHANNEL, channel_name + " :No such channel");
-		return;
+		return ;
 	}
 	if (!channel->isMember(&client))
 	{
 		_sendNumericReply(client, ERR_NOTONCHANNEL, channel_name + " :You're not on that channel");
-		return;
+		return ;
 	}
 	std::string part_broadcast = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " PART " + channel_name;
 	if (part_message != client.getNickname())
@@ -438,19 +394,19 @@ void CommandHandler::_handlePrivmsg(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 2)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PRIVMSG :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string target = message.getParam(0);
 	std::string msg_text = message.getParam(1);
 	if (target.empty() || msg_text.empty())
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PRIVMSG :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string privmsg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " PRIVMSG " + target + " :" + msg_text;
 	if (target[0] == '#')
@@ -459,12 +415,12 @@ void CommandHandler::_handlePrivmsg(Clients& client, const Messages& message)
 		if (!channel)
 		{
 			_sendNumericReply(client, ERR_NOSUCHCHANNEL, target + " :No such channel");
-			return;
+			return ;
 		}
 		if (!channel->isMember(&client))
 		{
 			_sendNumericReply(client, ERR_CANNOTSENDTOCHAN, target + " :Cannot send to channel");
-			return;
+			return ;
 		}
 		const std::set<Clients*>& members = channel->getMembers();
 		std::set<Clients*>::const_iterator it;
@@ -485,7 +441,7 @@ void CommandHandler::_handlePrivmsg(Clients& client, const Messages& message)
 		if (!target_client || !target_client->isConnected())
 		{
 			_sendNumericReply(client, ERR_NOSUCHNICK, target + " :No such nick/channel");
-			return;
+			return ;
 		}
 		_server->sendMessage(target_client->getFd(), privmsg);
 		std::cout << client.getNickname() << " sent private message to " << target << std::endl;
@@ -497,12 +453,12 @@ void CommandHandler::_handleKick(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 2)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "KICK :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string channel_name = message.getParam(0);
 	std::string target_nick = message.getParam(1);
@@ -511,31 +467,31 @@ void CommandHandler::_handleKick(Clients& client, const Messages& message)
 	if (!channel)
 	{
 		_sendNumericReply(client, ERR_NOSUCHCHANNEL, channel_name + " :No such channel");
-		return;
+		return ;
 	}
 	if (!channel->isMember(&client))
 	{
 		_sendNumericReply(client, ERR_NOTONCHANNEL, channel_name + " :You're not on that channel");
-		return;
+		return ;
 	}
 	if (!channel->isOperator(&client))
 	{
 		_sendNumericReply(client, ERR_CHANOPRIVSNEEDED, channel_name + " :You're not channel operator");
-		return;
+		return ;
 	}
 	Clients* target_client = _server->getClientByNickname(target_nick);
 	if (!target_client)
 	{
 		_sendNumericReply(client, ERR_NOSUCHNICK, target_nick + " :No such nick/channel");
-		return;
+		return ;
 	}
 	if (!channel->isMember(target_client))
 	{
 		_sendNumericReply(client, ERR_USERNOTINCHANNEL, target_nick + " " + channel_name + " :They aren't on that channel");
-		return;
+		return ;
 	}
 	std::string kick_broadcast = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " KICK " + channel_name + " " + target_nick + " :" + kick_reason;
-	const std::set<Clients*>& members = channel->getMembers();
+	const std::set<Clients*> &members = channel->getMembers();
 	std::set<Clients*>::const_iterator it;
 	for (it = members.begin(); it != members.end(); ++it)
 	{
@@ -545,11 +501,9 @@ void CommandHandler::_handleKick(Clients& client, const Messages& message)
 		}
 	}
 	channel->removeMember(target_client);
-	std::cout << "⚡ " << client.getNickname() << " kicked " << target_nick << " from " << channel_name << " (" << kick_reason << ")" << std::endl;
+	std::cout << client.getNickname() << " kicked " << target_nick << " from " << channel_name << " (" << kick_reason << ")" << std::endl;
 	if (channel->isEmpty())
-	{
 		_server->removeChannel(channel_name);
-	}
 }
 
 void CommandHandler::_handleInvite(Clients& client, const Messages& message)
@@ -557,12 +511,12 @@ void CommandHandler::_handleInvite(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 2)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "INVITE :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string target_nick = message.getParam(0);
 	std::string channel_name = message.getParam(1);
@@ -570,23 +524,23 @@ void CommandHandler::_handleInvite(Clients& client, const Messages& message)
 	if (!target_client)
 	{
 		_sendNumericReply(client, ERR_NOSUCHNICK, target_nick + " :No such nick/channel");
-		return;
+		return ;
 	}
 	Channels* channel = _server->getChannel(channel_name);
 	if (!channel)
 	{
 		_sendNumericReply(client, ERR_NOSUCHCHANNEL, channel_name + " :No such channel");
-		return;
+		return ;
 	}
 	if (!channel->isMember(&client))
 	{
 		_sendNumericReply(client, ERR_NOTONCHANNEL, channel_name + " :You're not on that channel");
-		return;
+		return ;
 	}
 	if (channel->isMember(target_client))
 	{
 		_sendNumericReply(client, ERR_USERONCHANNEL, target_nick + " " + channel_name + " :is already on channel");
-		return;
+		return ;
 	}
 	if (channel->isInviteOnly())
 		channel->addToInviteList(target_client);
@@ -601,12 +555,12 @@ void CommandHandler::_handleMode(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 1)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string target = message.getParam(0);
 	if (target[0] == '#')
@@ -615,12 +569,12 @@ void CommandHandler::_handleMode(Clients& client, const Messages& message)
 		if (!channel)
 		{
 			_sendNumericReply(client, ERR_NOSUCHCHANNEL, target + " :No such channel");
-			return;
+			return ;
 		}
 		if (!channel->isMember(&client))
 		{
 			_sendNumericReply(client, ERR_NOTONCHANNEL, target + " :You're not on that channel");
-			return;
+			return ;
 		}
 		if (message.getParamCount() == 1)
 		{
@@ -628,12 +582,12 @@ void CommandHandler::_handleMode(Clients& client, const Messages& message)
 			if (mode_info.empty())
 				mode_info = "+";
 			_sendNumericReply(client, RPL_CHANNELMODEIS, target + " " + mode_info);
-			return;
+			return ;
 		}
 		if (!channel->isOperator(&client))
 		{
 			_sendNumericReply(client, ERR_CHANOPRIVSNEEDED, target + " :You're not channel operator");
-			return;
+			return ;
 		}
 		std::string mode_string = message.getParam(1);
 		_handleChannelModes(client, channel, target, mode_string, message);
@@ -647,24 +601,24 @@ void CommandHandler::_handleTopic(Clients& client, const Messages& message)
 	if (client.getState() != AUTHENTIFICATED)
 	{
 		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
-		return;
+		return ;
 	}
 	if (message.getParamCount() < 1)
 	{
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "TOPIC :Not enough parameters");
-		return;
+		return ;
 	}
 	std::string channel_name = message.getParam(0);
 	Channels* channel = _server->getChannel(channel_name);
 	if (!channel)
 	{
 		_sendNumericReply(client, ERR_NOSUCHCHANNEL, channel_name + " :No such channel");
-		return;
+		return ;
 	}
 	if (!channel->isMember(&client))
 	{
 		_sendNumericReply(client, ERR_NOTONCHANNEL, channel_name + " :You're not on that channel");
-		return;
+		return ;
 	}
 	if (message.getParamCount() == 1)
 	{
@@ -672,13 +626,13 @@ void CommandHandler::_handleTopic(Clients& client, const Messages& message)
 			_sendNumericReply(client, RPL_NOTOPIC, channel_name + " :No topic is set");
 		else
 			_sendNumericReply(client, RPL_TOPIC, channel_name + " :" + channel->getTopic());
-		return;
+		return ;
 	}
 	std::string new_topic = message.getParam(1);
 	if (channel->isTopicRestricted() && !channel->isOperator(&client))
 	{
 		_sendNumericReply(client, ERR_CHANOPRIVSNEEDED, channel_name + " :You're not channel operator");
-		return;
+		return ;
 	}
 	channel->setTopic(new_topic);
 	std::string topic_broadcast = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " TOPIC " + channel_name + " :" + new_topic;
@@ -689,7 +643,7 @@ void CommandHandler::_handleTopic(Clients& client, const Messages& message)
 		if ((*it)->isConnected())
 			_server->sendMessage((*it)->getFd(), topic_broadcast);
 	}
-	std::cout << "📝 " << client.getNickname() << " changed topic of " << channel_name << " to: " << new_topic << std::endl;
+	std::cout << client.getNickname() << " changed topic of " << channel_name << " to: " << new_topic << std::endl;
 }
 
 //==================== Gestion des modes de channels ===================//
@@ -770,7 +724,6 @@ void CommandHandler::_handleChannelModes(Clients& client, Channels* channel, con
 					std::cout << client.getNickname() << " removed user limit from " << channelName << std::endl;
 				}
 				break ;
-				
 			case 'o':
 				if (paramIndex < message.getParamCount())
 				{
