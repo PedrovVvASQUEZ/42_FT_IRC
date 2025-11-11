@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:34 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/20 18:59:07 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/11 14:36:45 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -319,18 +319,12 @@ void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 		for (it = members.begin(); it != members.end(); ++it)
 		{
 			if (*it != &client && (*it)->isConnected())
-			{
 				_server->sendMessage((*it)->getFd(), join_message);
-			}
 		}
 		if (!channel->getTopic().empty())
-		{
 			_sendNumericReply(client, RPL_TOPIC, channel_name + " :" + channel->getTopic());
-		}
 		else
-		{
 			_sendNumericReply(client, RPL_NOTOPIC, channel_name + " :No topic is set");
-		}
 		std::string members_list = channel->getMembersList();
 		_sendNumericReply(client, RPL_NAMREPLY, "= " + channel_name + " :" + members_list);
 		_sendNumericReply(client, RPL_ENDOFNAMES, channel_name + " :End of /NAMES list");

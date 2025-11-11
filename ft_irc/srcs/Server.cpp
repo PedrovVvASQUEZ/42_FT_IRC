@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:53 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/23 18:35:29 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/11 14:37:59 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,7 +122,6 @@ void	Server::_createSocket()
 		std::cerr << "Error: Failed to create socket" << std::endl;
 		exit(1);
 	}
-	// Option pour réutiliser l'adresse
 	int opt = 1;
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
@@ -137,7 +136,7 @@ void	Server::_createSocket()
 void	Server::_bindSocket()
 {
 	_server_addr.sin_family = AF_INET;
-	_server_addr.sin_addr.s_addr = INADDR_ANY; // Écoute sur toutes les interfaces
+	_server_addr.sin_addr.s_addr = INADDR_ANY;
 	_server_addr.sin_port = htons(_port);
 
 	if (bind(_server_fd, (struct sockaddr*)&_server_addr, sizeof(_server_addr)) < 0)
@@ -151,7 +150,7 @@ void	Server::_bindSocket()
 
 void	Server::_listenSocket()
 {
-	if (listen(_server_fd, 5) < 0) // Max 5 connexions en attente
+	if (listen(_server_fd, 5) < 0)
 	{
 		std::cerr << "Error: Failed to listen on socket" << std::endl;
 		close(_server_fd);
@@ -163,13 +162,9 @@ void	Server::_listenSocket()
 void	Server::_setNonBlocking(int fd)
 {
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-	{
 		std::cerr << "Error: Failed to set non-blocking mode for FD " << fd << std::endl;
-	}
 	else
-	{
 		std::cout << "FD " << fd << " set to non-blocking mode" << std::endl;
-	}
 }
 
 void	Server::_acceptNewClient()
@@ -235,23 +230,23 @@ void	Server::_handleClientMessage(int client_fd)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
-			return;
+			return ;
 		}
 		std::cerr << "Error receiving from client " << client_fd << ": " << strerror(errno) << std::endl;
 		_clientRemover(client_fd);
-		return;
+		return ;
 	}
 	if (bytes_received == 0)
 	{
 		std::cout << "Client " << client_fd << " disconnected cleanly" << std::endl;
 		_clientRemover(client_fd);
-		return;
+		return ;
 	}
 	Clients		*client = getClient(client_fd);
 	if (!client)
 	{
 		std::cerr << "Error: Client not found for fd " << client_fd << std::endl;
-		return;
+		return ;
 	}
 	client->appendToBuffer(std::string(buffer, bytes_received));
 	bool found_crlf = _processMessagesFromBuffer(client, client_fd, "\r\n", 2);
@@ -270,8 +265,6 @@ bool	Server::_processMessagesFromBuffer(Clients *client, int client_fd, const st
 		found_any = true;
 		std::string raw_message = client_buffer.substr(0, pos);
 		client_buffer.erase(0, pos + bytes_to_skip);
-		
-		// Nettoyer le message (enlever \r final si présent)
 		if (!raw_message.empty() && raw_message[raw_message.length() - 1] == '\r')
 			raw_message.erase(raw_message.length() - 1);
 		if (!raw_message.empty())
@@ -279,16 +272,12 @@ bool	Server::_processMessagesFromBuffer(Clients *client, int client_fd, const st
 			std::cout << "Received from client " << client_fd << ": " << raw_message << std::endl;
 			Messages msg(raw_message);
 			if (msg.isValid())
-			{
 				_processMessage(*client, msg);
-			}
 			else
-			{
 				std::cout << "Invalid message format from client " << client_fd << ": " << raw_message << std::endl;
-			}
 		}
 	}
-	return found_any;
+	return (found_any);
 }
 
 //==================== CLIENT PART ===================//
@@ -299,7 +288,7 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	if (!client || !client->isConnected())
 	{
 		std::cerr << "Client: " << client_fd << " not found or disconnected" << std::endl;
-		return;
+		return ;
 	}
 	std::string full_message = message + "\r\n";
 	ssize_t bytes_sent = send(client_fd, full_message.c_str(), full_message.length(), 0);
@@ -308,11 +297,11 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
 			std::cout << "Send buffer full for client " << client_fd << std::endl;
-			return;
+			return ;
 		}
 		std::cerr << "Error: Failed to send message to client " << client_fd << std::endl;
 		_clientRemover(client_fd);
-		return;
+		return ;
 	}
 	else if (bytes_sent < (ssize_t)full_message.length())
 		std::cout << "Partial send to client " << client_fd << ": " << bytes_sent << "/" << full_message.length() << std::endl;
@@ -362,12 +351,12 @@ void Server::run(void)
 			if (errno == EINTR)
 				continue;
 			if (!_running)
-				break;
+				break ;
 			std::cerr << "Error: poll() failed" << std::endl;
-			break;
+			break ;
 		}
 		if (poll_result == 0)
-			continue;
+			continue ;
 		for (size_t i = 0; i < _pfds.size(); ++i)
 		{
 			if (_pfds[i].revents & POLLIN)
