@@ -27,22 +27,19 @@ class Messages
 		std::vector<std::string>	_params;
 		bool						_isValid;
 
-		// Méthodes privées de parsing
 		void						_parseMessage();
 		bool						_validateCommand() const;
 		std::string					_trim(const std::string& str) const;
 
 	public:
-		// Constructeurs et destructeur
+
 		Messages();
 		Messages(const std::string& rawMessage);
 		Messages(const Messages& other);
 		~Messages();
 
-		// Opérateur d'assignation
 		Messages& operator=(const Messages& other);
 
-		// Getters
 		std::string					getRawMessage() const;
 		std::string					getPrefix() const;
 		std::string					getCommand() const;

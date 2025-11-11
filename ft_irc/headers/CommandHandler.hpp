@@ -75,7 +75,6 @@
 # include <cctype>
 # include <iomanip>
 
-// Forward declarations
 class Server;
 
 class	CommandHandler
@@ -83,13 +82,11 @@ class	CommandHandler
 	private:
 		Server*		_server;
 		
-		// Fonctions utilitaires
 		std::vector<std::string> _split(const std::string& str, char delimiter);
 		std::string _toUpper(const std::string& str);
 		bool		_isValidNickname(const std::string& nickname);
 		bool		_isValidChannel(const std::string& channel);
 		
-		// Fonctions de commandes principales
 		void		_handlePass(Clients& client, const Messages& message);
 		void		_handleNick(Clients& client, const Messages& message);
 		void		_handleUser(Clients& client, const Messages& message);
@@ -101,8 +98,9 @@ class	CommandHandler
 		void		_handleInvite(Clients& client, const Messages& message);
 		void		_handleMode(Clients& client, const Messages& message);
 		void		_handleTopic(Clients& client, const Messages& message);
+		void		_handleChannelModes(Clients& client, Channels* channel, const std::string& channelName, const std::string& modeString, const Messages& message);
+		void		_broadcastModeChange(Clients& client, const std::string& channelName, const std::string& mode, const std::string& param);
 		
-		// Fonctions d'aide pour les réponses
 		void		_sendNumericReply(Clients& client, int code, const std::string& params);
 		void		_sendWelcomeSequence(Clients& client);
 		std::string	_formatNumericReply(int code, const std::string& target, const std::string& message);
@@ -115,7 +113,6 @@ class	CommandHandler
 
 		CommandHandler	&operator=(const CommandHandler &rhs);
 
-		// Fonction principale
 		void		processCommand(Clients& client, const Messages& message);
 		void		setServer(Server* server);
 };

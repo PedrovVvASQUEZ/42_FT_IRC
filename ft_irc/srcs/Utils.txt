@@ -85,3 +85,24 @@
 // SO_REUSEADDR : "Je veux réutiliser l'adresse"
 // &opt : "La valeur est 1 (activé)"
 // sizeof(opt) : "La valeur fait 4 octets"
+
+
+nc localhost 6667
+
+# Dans netcat :
+PASS mypassword
+NICK bob
+USER bob 0 * :Bob Builder
+JOIN #test
+PRIVMSG #test :Salut Alice !
+PRIVMSG alice :Message privé pour Alice
+
+nc localhost 6667
+
+# Dans netcat :
+PASS mypassword
+NICK alice
+USER alice 0 * :Alice Wonderland
+JOIN #test
+TOPIC #test :Channel de test
+PRIVMSG #test :Hello world!

@@ -37,7 +37,7 @@
 class	Server
 {
 	private:
-		// Configuration de base
+
 		int								_port;
 		std::string						_password;
 		int								_server_fd;
@@ -47,31 +47,27 @@ class	Server
 		std::vector<struct pollfd>		_pfds;
 		std::map<int, Clients>			_clients;
 		std::map<std::string, Channels>	_channels;
-		
 
-		// Méthodes privées - étapes de setup
 		void	_createSocket(void);
 		void	_bindSocket(void);
 		void	_listenSocket(void);
 		void	_setNonBlocking(int fd);
 
-		void	_acceptNewClient(void);	// Accept UNE connexion
-		void	_handleClientMessage(int client_fd);	// Lit et traite UN message
+		void	_acceptNewClient(void);
+		void	_handleClientMessage(int client_fd);
 		void	_clientRemover(int client_fd);
 		void	_processMessage(Clients &Client, const Messages &message);
 		bool	_processMessagesFromBuffer(Clients *client, int client_fd, const std::string &delimiter, int bytes_to_skip);
 
 	public:
-		// Constructeurs / Destructeur
+
 		Server(void);
 		Server(int port, const std::string &password);
 		Server(const Server &rhs);
 		~Server(void);
 
-		// Sucharges d'operateur
 		Server	&operator=(const Server &rhs);
 
-		// Getters de base
 		std::string		getServerName(void) const;
 		int				getServerFd(void) const;
 		int				getPort(void) const;
@@ -85,13 +81,12 @@ class	Server
 		void			removeClient(Clients* client);
 		size_t			getClientCount(void) const;
 
-		// SERVER activation N deactivation
-		void	start(void);		// Setup complet du serveur
+		void	start(void);
 		void	run(void);
-		void	stop(void);			// Ferme les connexions
+		void	stop(void);
 
 		// CLIENT part
-		void	sendMessage(int client_fd, const std::string& message);	// Envoie UN message
+		void	sendMessage(int client_fd, const std::string& message);
 		void	removeClientFromAllChannels(Clients* client);
 
 		// CHANNELS part
@@ -99,10 +94,8 @@ class	Server
 		const Channels	*getChannel(const std::string &name) const;
 		Channels		*createChannel(const std::string &name);
 		void			removeChannel(const std::string &name);
-		
-		// SERVER utilities for CommandHandler
-		bool		isNicknameInUse(const std::string& nickname) const;
-		
+
+		bool	isNicknameInUse(const std::string& nickname) const;
 };
 
 #endif

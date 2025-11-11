@@ -21,13 +21,19 @@
 class	Channels
 {
 	private:
-		std::string			_name;		// Nom du canal (#general)
-		std::string			_topic;		// Sujet du canal
-		std::set<Clients *>	_members;	// Liste des pointeurs vers les clients membres
-		std::set<Clients *>	_operators;	// Liste des pointeurs vers les opérateurs
+		std::string			_name;
+		std::string			_topic;
+		std::set<Clients *>	_members;
+		std::set<Clients *>	_operators;
+
+		bool				_inviteOnly;
+		bool				_topicRestricted;
+		std::string			_key;
+		size_t				_userLimit;
+		std::set<Clients *>	_inviteList;
 
 	public:
-		// Constructeurs/Destructeur
+
 		public:
 		Channels(void);
 		Channels(const std::string &name);
@@ -43,22 +49,35 @@ class	Channels
 		const std::set<Clients*>	&getOperators(void) const;
 		size_t						getMembersCount(void) const;
 
-		// Setters
 		void	setTopic(const std::string &topic);
+		
+		bool	isInviteOnly(void) const;
+		void	setInviteOnly(bool invite);
+		bool	isTopicRestricted(void) const;
+		void	setTopicRestricted(bool restricted);
+		const std::string	&getKey(void) const;
+		void	setKey(const std::string &key);
+		bool	hasKey(void) const;
+		size_t	getUserLimit(void) const;
+		void	setUserLimit(size_t limit);
+		bool	hasUserLimit(void) const;
+		
+		void	addToInviteList(Clients* client);
+		void	removeFromInviteList(Clients* client);
+		bool	isInvited(Clients* client) const;
+		void	clearInviteList(void);
 
-		// Gestion des membres
 		bool	addMember(Clients* client);
 		bool	removeMember(Clients* client);
 		bool	isMember(Clients* client) const;
 		bool	isEmpty(void) const;
 
-		// Gestion des opérateurs
 		bool	addOperator(Clients* client);
 		bool	removeOperator(Clients* client);
 		bool	isOperator(Clients* client) const;
 
-		// Utilitaires
 		std::string	getMembersList(void) const;
+		std::string	getModeString(void) const;
 };
 
 #endif

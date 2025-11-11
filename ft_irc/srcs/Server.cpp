@@ -396,12 +396,12 @@ void Server::run(void)
 			{
 				if (_pfds[i].fd == _server_fd)
 				{
-					std::cout << "🆕 New connection incoming..." << std::endl;
+					std::cout << "New connection incoming..." << std::endl;
 					_acceptNewClient();
 				}
 				else
 				{
-					std::cout << "📨 Message from client FD: " << _pfds[i].fd << std::endl;
+					std::cout << "Message from client FD: " << _pfds[i].fd << std::endl;
 					_handleClientMessage(_pfds[i].fd);
 				}
 			}

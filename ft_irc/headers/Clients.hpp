@@ -45,7 +45,6 @@ class	Clients
 
 		Clients& operator=(const Clients &rhs);
 
-		// Getters
 		int					getFd(void) const;
 		const std::string&	getNickname(void) const;
 		const std::string&	getUsername(void) const;
@@ -56,7 +55,6 @@ class	Clients
 		std::string&		getBuffer(void);
 		bool				isPasswordValid(void) const;
 
-		// Setters
 		void	setNickname(const std::string &nickname);
 		void	setUsername(const std::string &username);
 		void	setRealname(const std::string &realname);
@@ -72,5 +70,3 @@ class	Clients
 };
 
 #endif
-
-// Oui et avec les modifications necessaire concerner les nouvelles fonctions et des fonctions a modifier de part la nouvelle nature des variables privees. Les modifications toujours dans le chat

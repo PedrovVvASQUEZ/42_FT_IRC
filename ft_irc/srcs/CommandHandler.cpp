@@ -137,8 +137,8 @@ void CommandHandler::processCommand(Clients& client, const Messages& message)
 		return;
 	}
 	std::string command = message.getCommand();
-	std::cout << "📨 Processing command from client " << client.getFd() << ": '" << command << "'" << std::endl;
-	std::cout << "🔍 Message valid: " << (message.isValid() ? "YES" : "NO") << std::endl;
+	std::cout << "Processing command from client " << client.getFd() << ": '" << command << "'" << std::endl;
+	std::cout << "Message valid: " << (message.isValid() ? "YES" : "NO") << std::endl;
 	command = _toUpper(command);
 	if (command == "PASS")
 		_handlePass(client, message);
@@ -192,7 +192,7 @@ void CommandHandler::_sendWelcomeSequence(Clients& client)
 	_sendNumericReply(client, RPL_YOURHOST, ":Your host is " + _server->getServerName() + ", running version 1.0");
 	_sendNumericReply(client, RPL_CREATED, ":This server was created today");
 	_sendNumericReply(client, RPL_MYINFO, _server->getServerName() + " 1.0 o o");
-	std::cout << "✅ Welcome sequence sent to " << nick << std::endl;
+	std::cout << "Welcome sequence sent to " << nick << std::endl;
 }
 
 //==================== Commandes d'authentification ===================//
@@ -213,7 +213,7 @@ void CommandHandler::_handlePass(Clients& client, const Messages& message)
 	if (password == _server->getPassword())
 	{
 		client.setPasswordValid(true);
-		std::cout << "🔐 Client " << client.getFd() << " provided correct password" << std::endl;
+		std::cout << "Client " << client.getFd() << " provided correct password" << std::endl;
 	}
 	else
 	{
@@ -245,10 +245,10 @@ void CommandHandler::_handleNick(Clients& client, const Messages& message)
 	std::string old_nick = client.getNickname();
 	client.setNickname(nickname);
 	if (old_nick.empty())
-		std::cout << "📛 Client " << client.getFd() << " set nickname to: " << nickname << std::endl;
+		std::cout << "Client " << client.getFd() << " set nickname to: " << nickname << std::endl;
 	else
 	{
-		std::cout << "📛 Client " << client.getFd() << " changed nickname from " << old_nick << " to " << nickname << std::endl;
+		std::cout << "Client " << client.getFd() << " changed nickname from " << old_nick << " to " << nickname << std::endl;
 		if (client.getState() == AUTHENTIFICATED)
 		{
 			std::string nick_change = ":" + old_nick + "!" + client.getUsername() + "@" + client.getHostname() + " NICK " + nickname;
@@ -279,7 +279,7 @@ void CommandHandler::_handleUser(Clients& client, const Messages& message)
 	std::string realname = message.getParamCount() > 3 ? message.getParam(3) : "Unknown";
 	client.setUsername(username);
 	client.setRealname(realname);
-	std::cout << "👤 Client " << client.getFd() << " set user info: " << username << " (" << realname << ")" << std::endl;
+	std::cout << "Client " << client.getFd() << " set user info: " << username << " (" << realname << ")" << std::endl;
 	if (!client.getNickname().empty() && !client.getUsername().empty() && 
 		client.isPasswordValid() && client.getState() != AUTHENTIFICATED)
 	{
@@ -313,8 +313,6 @@ void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 		return;
 	}
 	std::string channel_name = message.getParam(0);
-	
-	// Vérifier que le nom du channel commence par #
 	if (channel_name.empty() || channel_name[0] != '#')
 	{
 		_sendNumericReply(client, ERR_NOSUCHCHANNEL, channel_name + " :No such channel");
@@ -324,19 +322,42 @@ void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 	if (!channel)
 	{
 		channel = _server->createChannel(channel_name);
-		std::cout << "📺 Channel " << channel_name << " created by " << client.getNickname() << std::endl;
+		std::cout << "Channel " << channel_name << " created by " << client.getNickname() << std::endl;
+	}
+	else
+	{
+		if (channel->isInviteOnly() && !channel->isInvited(&client))
+		{
+			_sendNumericReply(client, ERR_INVITEONLYCHAN, channel_name + " :Cannot join channel (+i)");
+			return ;
+		}
+		if (channel->hasKey())
+		{
+			std::string provided_key = message.getParamCount() > 1 ? message.getParam(1) : "";
+			if (provided_key != channel->getKey())
+			{
+				_sendNumericReply(client, ERR_BADCHANNELKEY, channel_name + " :Cannot join channel (+k)");
+				return ;
+			}
+		}
+		if (channel->hasUserLimit() && channel->getMembersCount() >= channel->getUserLimit())
+		{
+			_sendNumericReply(client, ERR_CHANNELISFULL, channel_name + " :Cannot join channel (+l)");
+			return ;
+		}
 	}
 	if (channel->addMember(&client))
 	{
+		// Retirer de la liste d'invitation si présent
+		channel->removeFromInviteList(&client);
 		if (channel->getMembersCount() == 1)
 		{
 			channel->addOperator(&client);
-			std::cout << "👑 " << client.getNickname() << " became operator of " << channel_name << " (channel founder)" << std::endl;
+			std::cout << client.getNickname() << " became operator of " << channel_name << " (channel founder)" << std::endl;
 		}
-		std::cout << "📺 " << client.getNickname() << " joined channel " << channel_name << std::endl;
+		std::cout << client.getNickname() << " joined channel " << channel_name << std::endl;
 		std::string join_message = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " JOIN " + channel_name;
 		_server->sendMessage(client.getFd(), join_message);
-		
 		const std::set<Clients*>& members = channel->getMembers();
 		std::set<Clients*>::const_iterator it;
 		for (it = members.begin(); it != members.end(); ++it)
@@ -360,7 +381,7 @@ void CommandHandler::_handleJoin(Clients& client, const Messages& message)
 	}
 	else
 	{
-		std::cout << "⚠️  " << client.getNickname() << " already in channel " << channel_name << std::endl;
+		std::cout << "Warning: " << client.getNickname() << " already in channel " << channel_name << std::endl;
 	}
 }
 
@@ -376,7 +397,6 @@ void CommandHandler::_handlePart(Clients& client, const Messages& message)
 		_sendNumericReply(client, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
 		return;
 	}
-	
 	std::string channel_name = message.getParam(0);
 	std::string part_message = message.getParamCount() > 1 ? message.getParam(1) : client.getNickname();
 	Channels* channel = _server->getChannel(channel_name);
@@ -405,7 +425,7 @@ void CommandHandler::_handlePart(Clients& client, const Messages& message)
 	}
 	if (channel->removeMember(&client))
 	{
-		std::cout << "📺 " << client.getNickname() << " left channel " << channel_name << std::endl;
+		std::cout << client.getNickname() << " left channel " << channel_name << std::endl;
 		if (channel->isEmpty())
 		{
 			_server->removeChannel(channel_name);
@@ -457,7 +477,7 @@ void CommandHandler::_handlePrivmsg(Clients& client, const Messages& message)
 				sent_count++;
 			}
 		}
-		std::cout << "💬 " << client.getNickname() << " sent message to channel " << target << " (delivered to " << sent_count << " users)" << std::endl;
+		std::cout << client.getNickname() << " sent message to channel " << target << " (delivered to " << sent_count << " users)" << std::endl;
 	}
 	else
 	{
@@ -468,7 +488,7 @@ void CommandHandler::_handlePrivmsg(Clients& client, const Messages& message)
 			return;
 		}
 		_server->sendMessage(target_client->getFd(), privmsg);
-		std::cout << "💬 " << client.getNickname() << " sent private message to " << target << std::endl;
+		std::cout << client.getNickname() << " sent private message to " << target << std::endl;
 	}
 }
 
@@ -568,10 +588,12 @@ void CommandHandler::_handleInvite(Clients& client, const Messages& message)
 		_sendNumericReply(client, ERR_USERONCHANNEL, target_nick + " " + channel_name + " :is already on channel");
 		return;
 	}
+	if (channel->isInviteOnly())
+		channel->addToInviteList(target_client);
 	std::string invite_message = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " INVITE " + target_nick + " :" + channel_name;
 	_server->sendMessage(target_client->getFd(), invite_message);
 	_sendNumericReply(client, RPL_INVITING, target_nick + " " + channel_name);
-	std::cout << "✉️ " << client.getNickname() << " invited " << target_nick << " to " << channel_name << std::endl;
+	std::cout << client.getNickname() << " invited " << target_nick << " to " << channel_name << std::endl;
 }
 
 void CommandHandler::_handleMode(Clients& client, const Messages& message)
@@ -602,70 +624,22 @@ void CommandHandler::_handleMode(Clients& client, const Messages& message)
 		}
 		if (message.getParamCount() == 1)
 		{
-			_sendNumericReply(client, RPL_CHANNELMODEIS, target + " +");
+			std::string mode_info = channel->getModeString();
+			if (mode_info.empty())
+				mode_info = "+";
+			_sendNumericReply(client, RPL_CHANNELMODEIS, target + " " + mode_info);
+			return;
+		}
+		if (!channel->isOperator(&client))
+		{
+			_sendNumericReply(client, ERR_CHANOPRIVSNEEDED, target + " :You're not channel operator");
 			return;
 		}
 		std::string mode_string = message.getParam(1);
-		if (mode_string == "+o" || mode_string == "-o")
-		{
-			if (message.getParamCount() < 3)
-			{
-				_sendNumericReply(client, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
-				return;
-			}
-			std::string target_nick = message.getParam(2);
-			Clients* target_client = _server->getClientByNickname(target_nick);
-			if (!target_client)
-			{
-				_sendNumericReply(client, ERR_NOSUCHNICK, target_nick + " :No such nick/channel");
-				return;
-			}
-			if (!channel->isMember(target_client))
-			{
-				_sendNumericReply(client, ERR_USERNOTINCHANNEL, target_nick + " " + target + " :They aren't on that channel");
-				return;
-			}
-			if (!channel->isOperator(&client))
-			{
-				_sendNumericReply(client, ERR_CHANOPRIVSNEEDED, target + " :You're not channel operator");
-				return;
-			}
-			if (mode_string == "+o")
-			{
-				if (channel->addOperator(target_client))
-					std::cout << "🔧 " << client.getNickname() << " gave operator to " << target_nick << " in " << target << std::endl;
-				else
-				{
-					std::cout << "⚠️  Failed to give operator to " << target_nick << " (already operator or not member)" << std::endl;
-					return;
-				}
-			}
-			else
-			{
-				if (channel->removeOperator(target_client))
-					std::cout << "🔧 " << client.getNickname() << " removed operator from " << target_nick << " in " << target << std::endl;
-				else
-				{
-					std::cout << "⚠️  Cannot remove last operator from " << target << std::endl;
-					return;
-				}
-			}
-			std::string mode_broadcast = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " MODE " + target + " " + mode_string + " " + target_nick;
-			const std::set<Clients*>& members = channel->getMembers();
-			std::set<Clients*>::const_iterator it;
-			for (it = members.begin(); it != members.end(); ++it)
-			{
-				if ((*it)->isConnected())
-				{
-					_server->sendMessage((*it)->getFd(), mode_broadcast);
-				}
-			}
-		}
-		else
-			std::cout << "🔧 MODE " << mode_string << " not implemented yet" << std::endl;
+		_handleChannelModes(client, channel, target, mode_string, message);
 	}
 	else
-		std::cout << "🔧 User MODE not implemented yet" << std::endl;
+		std::cout << "User MODE not implemented yet" << std::endl;
 }
 
 void CommandHandler::_handleTopic(Clients& client, const Messages& message)
@@ -701,7 +675,7 @@ void CommandHandler::_handleTopic(Clients& client, const Messages& message)
 		return;
 	}
 	std::string new_topic = message.getParam(1);
-	if (!channel->isOperator(&client))
+	if (channel->isTopicRestricted() && !channel->isOperator(&client))
 	{
 		_sendNumericReply(client, ERR_CHANOPRIVSNEEDED, channel_name + " :You're not channel operator");
 		return;
@@ -715,7 +689,154 @@ void CommandHandler::_handleTopic(Clients& client, const Messages& message)
 		if ((*it)->isConnected())
 			_server->sendMessage((*it)->getFd(), topic_broadcast);
 	}
-	
 	std::cout << "📝 " << client.getNickname() << " changed topic of " << channel_name << " to: " << new_topic << std::endl;
+}
+
+//==================== Gestion des modes de channels ===================//
+
+void CommandHandler::_handleChannelModes(Clients& client, Channels* channel, const std::string& channelName, const std::string& modeString, const Messages& message)
+{
+	if (modeString.empty() || (modeString[0] != '+' && modeString[0] != '-'))
+		return ;
+	bool adding = (modeString[0] == '+');
+	std::string modes = modeString.substr(1);
+	size_t paramIndex = 2;
+	for (size_t i = 0; i < modes.length(); ++i)
+	{
+		char mode = modes[i];
+		std::string modeChange = (adding ? "+" : "-");
+		modeChange += mode;
+		switch (mode)
+		{
+			case 'i':
+				channel->setInviteOnly(adding);
+				if (!adding)
+					channel->clearInviteList();
+				_broadcastModeChange(client, channelName, modeChange, "");
+				std::cout << client.getNickname() << (adding ? " enabled" : " disabled") << " invite-only mode for " << channelName << std::endl;
+				break ;
+			case 't':
+				channel->setTopicRestricted(adding);
+				_broadcastModeChange(client, channelName, modeChange, "");
+				std::cout << client.getNickname() << (adding ? " enabled" : " disabled") << " topic restriction for " << channelName << std::endl;
+				break ;
+			case 'k':
+				if (adding)
+				{
+					if (paramIndex < message.getParamCount())
+					{
+						std::string key = message.getParam(paramIndex++);
+						channel->setKey(key);
+						_broadcastModeChange(client, channelName, modeChange, key);
+						std::cout << client.getNickname() << " set key for " << channelName << std::endl;
+					}
+					else
+					{
+						_sendNumericReply(client, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
+						return ;
+					}
+				}
+				else
+				{
+					channel->setKey("");
+					_broadcastModeChange(client, channelName, modeChange, "");
+					std::cout << client.getNickname() << " removed key from " << channelName << std::endl;
+				}
+				break ;
+			case 'l':
+				if (adding)
+				{
+					if (paramIndex < message.getParamCount())
+					{
+						std::string limitStr = message.getParam(paramIndex++);
+						size_t limit = std::atoi(limitStr.c_str());
+						if (limit > 0)
+						{
+							channel->setUserLimit(limit);
+							_broadcastModeChange(client, channelName, modeChange, limitStr);
+							std::cout << client.getNickname() << " set user limit to " << limit << " for " << channelName << std::endl;
+						}
+					}
+					else
+					{
+						_sendNumericReply(client, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
+						return ;
+					}
+				}
+				else
+				{
+					channel->setUserLimit(0);
+					_broadcastModeChange(client, channelName, modeChange, "");
+					std::cout << client.getNickname() << " removed user limit from " << channelName << std::endl;
+				}
+				break ;
+				
+			case 'o':
+				if (paramIndex < message.getParamCount())
+				{
+					std::string target_nick = message.getParam(paramIndex++);
+					Clients* target_client = _server->getClientByNickname(target_nick);
+					if (!target_client)
+					{
+						_sendNumericReply(client, ERR_NOSUCHNICK, target_nick + " :No such nick/channel");
+						return ;
+					}
+					if (!channel->isMember(target_client))
+					{
+						_sendNumericReply(client, ERR_USERNOTINCHANNEL, target_nick + " " + channelName + " :They aren't on that channel");
+						return ;
+					}
+					
+					if (adding)
+					{
+						if (channel->addOperator(target_client))
+						{
+							_broadcastModeChange(client, channelName, modeChange, target_nick);
+							std::cout << client.getNickname() << " gave operator to " << target_nick << " in " << channelName << std::endl;
+						}
+					}
+					else
+					{
+						if (channel->removeOperator(target_client))
+						{
+							_broadcastModeChange(client, channelName, modeChange, target_nick);
+							std::cout << client.getNickname() << " removed operator from " << target_nick << " in " << channelName << std::endl;
+						}
+						else
+						{
+							std::cout << "Warning: Cannot remove last operator from " << channelName << std::endl;
+						}
+					}
+				}
+				else
+				{
+					_sendNumericReply(client, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
+					return ;
+				}
+				break ;
+			default:
+				std::cout << "MODE " << mode << " not implemented" << std::endl;
+				break ;
+		}
+	}
+}
+
+void CommandHandler::_broadcastModeChange(Clients& client, const std::string& channelName, const std::string& mode, const std::string& param)
+{
+	Channels* channel = _server->getChannel(channelName);
+	if (!channel)
+		return ;
+	std::string mode_broadcast = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " MODE " + channelName + " " + mode;
+	if (!param.empty())
+		mode_broadcast += " " + param;
+	const std::set<Clients*>& members = channel->getMembers();
+	std::set<Clients*>::const_iterator it;
+	for (it = members.begin(); it != members.end(); ++it)
+	{
+		if ((*it)->isConnected())
+		{
+			_server->sendMessage((*it)->getFd(), mode_broadcast);
+		}
+	}
 }
 
