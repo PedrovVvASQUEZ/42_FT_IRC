@@ -6,11 +6,12 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:08 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/11 18:11:59 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Channels.hpp"
+#include "Server.hpp"
 #include <iostream>
 
 //==================== Contructors N Destructor ===================//
@@ -144,13 +145,17 @@ bool	Channels::isEmpty(void) const
 	return (_members.empty());
 }
 
-std::string	Channels::getMembersList(void) const
+std::string	Channels::getMembersList(Server* server) const
 {
 	std::string members_list;
 	std::set<Clients*>::const_iterator it;
 	
 	for (it = _members.begin(); it != _members.end(); ++it)
 	{
+		// Vérifier que le client existe toujours dans le serveur
+		if (server && server->getClient((*it)->getFd()) == NULL)
+			continue; // Skip les clients qui n'existent plus
+			
 		if (!members_list.empty())
 			members_list += " ";
 		

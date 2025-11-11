@@ -6,11 +6,10 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:53 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/11/11 14:37:59 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/11 18:58:58 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <errno.h>
 #include "Server.hpp"
 
 //==================== Contructors N Destructor ===================//
@@ -118,16 +117,12 @@ void	Server::_createSocket()
 	_server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	std::cout << "Server FD: " << _server_fd << std::endl;
 	if (_server_fd == -1)
-	{
-		std::cerr << "Error: Failed to create socket" << std::endl;
-		exit(1);
-	}
+		throw std::runtime_error("Failed to create socket");
 	int opt = 1;
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
-		std::cerr << "Error: Failed to set socket options" << std::endl;
 		close(_server_fd);
-		exit(1);
+		throw std::runtime_error("Failed to set socket options");
 	}
 	_setNonBlocking(_server_fd);
 	std::cout << "Socket created successfully" << std::endl;
@@ -141,9 +136,8 @@ void	Server::_bindSocket()
 
 	if (bind(_server_fd, (struct sockaddr*)&_server_addr, sizeof(_server_addr)) < 0)
 	{
-		std::cerr << "Error: Failed to bind socket to port " << _port << std::endl;
 		close(_server_fd);
-		exit(1);
+		throw std::runtime_error("Failed to bind socket to port");
 	}
 	std::cout << "Socket bound to port " << _port << std::endl;
 }
@@ -152,9 +146,8 @@ void	Server::_listenSocket()
 {
 	if (listen(_server_fd, 5) < 0)
 	{
-		std::cerr << "Error: Failed to listen on socket" << std::endl;
 		close(_server_fd);
-		exit(1);
+		throw std::runtime_error("Failed to listen on socket");
 	}
 	std::cout << "Server listening on port " << _port << std::endl;
 }
@@ -228,11 +221,7 @@ void	Server::_handleClientMessage(int client_fd)
 
 	if (bytes_received < 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-		{
-			return ;
-		}
-		std::cerr << "Error receiving from client " << client_fd << ": " << strerror(errno) << std::endl;
+		std::cerr << "Error receiving from client " << client_fd << std::endl;
 		_clientRemover(client_fd);
 		return ;
 	}
@@ -251,17 +240,30 @@ void	Server::_handleClientMessage(int client_fd)
 	client->appendToBuffer(std::string(buffer, bytes_received));
 	bool found_crlf = _processMessagesFromBuffer(client, client_fd, "\r\n", 2);
 	if (!found_crlf)
-		_processMessagesFromBuffer(client, client_fd, "\n", 1);
+	{
+		client = getClient(client_fd);
+		if (client)
+			_processMessagesFromBuffer(client, client_fd, "\n", 1);
+	}
 }
 
 bool	Server::_processMessagesFromBuffer(Clients *client, int client_fd, const std::string &delimiter, int bytes_to_skip)
 {
-	std::string	&client_buffer = client->getBuffer();
 	size_t pos;
 	bool found_any = false;
 	
-	while ((pos = client_buffer.find(delimiter)) != std::string::npos)
+	while (true)
 	{
+		client = getClient(client_fd);
+		if (!client)
+		{
+			std::cout << "Client " << client_fd << " no longer exists, stopping message processing" << std::endl;
+			break ;
+		}
+		std::string	&client_buffer = client->getBuffer();
+		pos = client_buffer.find(delimiter);
+		if (pos == std::string::npos)
+			break ;
 		found_any = true;
 		std::string raw_message = client_buffer.substr(0, pos);
 		client_buffer.erase(0, pos + bytes_to_skip);
@@ -294,11 +296,6 @@ void	Server::sendMessage(int client_fd, const std::string &message)
 	ssize_t bytes_sent = send(client_fd, full_message.c_str(), full_message.length(), 0);
 	if (bytes_sent < 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-		{
-			std::cout << "Send buffer full for client " << client_fd << std::endl;
-			return ;
-		}
 		std::cerr << "Error: Failed to send message to client " << client_fd << std::endl;
 		_clientRemover(client_fd);
 		return ;
@@ -348,12 +345,10 @@ void Server::run(void)
 		int poll_result = poll(_pfds.data(), _pfds.size(), 100);
 		if (poll_result < 0)
 		{
-			if (errno == EINTR)
-				continue;
 			if (!_running)
 				break ;
 			std::cerr << "Error: poll() failed" << std::endl;
-			break ;
+			continue ;
 		}
 		if (poll_result == 0)
 			continue ;

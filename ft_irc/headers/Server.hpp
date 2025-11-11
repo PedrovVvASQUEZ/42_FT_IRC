@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:10:58 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/11 17:49:34 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,6 @@
 # include <netinet/in.h>
 # include <arpa/inet.h>
 # include <unistd.h>
-# include <errno.h>
 # include <iostream>
 # include <string>
 # include <cstring>
@@ -27,6 +26,7 @@
 # include <algorithm>
 # include <poll.h>
 # include <fcntl.h>
+# include <stdexcept>
 # include "Clients.hpp"
 # include "Channels.hpp"
 # include "CommandHandler.hpp"

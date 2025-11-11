@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:11:27 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/10/23 18:17:16 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/11 19:00:46 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 # include <string>
 # include <set>
 # include <algorithm>
+
+class Server;
 
 class	Channels
 {
@@ -76,7 +78,7 @@ class	Channels
 		bool	removeOperator(Clients* client);
 		bool	isOperator(Clients* client) const;
 
-		std::string	getMembersList(void) const;
+		std::string	getMembersList(Server* server) const;
 		std::string	getModeString(void) const;
 };
 
