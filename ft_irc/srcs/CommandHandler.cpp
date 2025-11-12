@@ -735,7 +735,6 @@ void CommandHandler::_handleChannelModes(Clients& client, Channels* channel, con
 						_sendNumericReply(client, ERR_USERNOTINCHANNEL, target_nick + " " + channelName + " :They aren't on that channel");
 						return ;
 					}
-					
 					if (adding)
 					{
 						if (channel->addOperator(target_client))
@@ -752,9 +751,7 @@ void CommandHandler::_handleChannelModes(Clients& client, Channels* channel, con
 							std::cout << client.getNickname() << " removed operator from " << target_nick << " in " << channelName << std::endl;
 						}
 						else
-						{
 							std::cout << "Warning: Cannot remove last operator from " << channelName << std::endl;
-						}
 					}
 				}
 				else
@@ -783,9 +780,7 @@ void CommandHandler::_broadcastModeChange(Clients& client, const std::string& ch
 	for (it = members.begin(); it != members.end(); ++it)
 	{
 		if ((*it)->isConnected())
-		{
 			_server->sendMessage((*it)->getFd(), mode_broadcast);
-		}
 	}
 }
 
