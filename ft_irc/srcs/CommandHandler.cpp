@@ -119,6 +119,10 @@ void CommandHandler::processCommand(Clients& client, const Messages& message)
 		_handleMode(client, message);
 	else if (command == "TOPIC")
 		_handleTopic(client, message);
+	else if (command == "PING")
+		_handlePing(client, message);
+	else if (command == "NOTICE")
+		_handleNotice(client, message);
 	else
 		_sendNumericReply(client, ERR_UNKNOWNCOMMAND, command + " :Unknown command");
 }
@@ -782,6 +786,61 @@ void CommandHandler::_broadcastModeChange(Clients& client, const std::string& ch
 		{
 			_server->sendMessage((*it)->getFd(), mode_broadcast);
 		}
+	}
+}
+
+//==================== Commandes supplémentaires ===================//
+
+void CommandHandler::_handlePing(Clients& client, const Messages& message)
+{
+	if (client.getState() != AUTHENTIFICATED)
+	{
+		_sendNumericReply(client, ERR_NOTREGISTERED, ":You have not registered");
+		return ;
+	}
+	if (message.getParamCount() == 0)
+	{
+		_sendNumericReply(client, ERR_NOORIGIN, ":No origin specified");
+		return ;
+	}
+	std::string origin = message.getParam(0);
+	std::string pong_reply = "PONG " + _server->getServerName() + " :" + origin;
+	_server->sendMessage(client.getFd(), pong_reply);
+	std::cout << "PING from " << client.getNickname() << ", replied with PONG" << std::endl;
+}
+
+void CommandHandler::_handleNotice(Clients& client, const Messages& message)
+{
+	if (client.getState() != AUTHENTIFICATED)
+		return ;
+	if (message.getParamCount() < 2)
+		return ;
+	std::string target = message.getParam(0);
+	std::string notice_text = message.getParam(1);
+	if (target.empty() || notice_text.empty())
+		return ;
+	std::string notice_msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " NOTICE " + target + " :" + notice_text;
+	if (target[0] == '#')
+	{
+		Channels* channel = _server->getChannel(target);
+		if (!channel || !channel->isMember(&client))
+			return ;
+		const std::set<Clients*>& members = channel->getMembers();
+		std::set<Clients*>::const_iterator it;
+		for (it = members.begin(); it != members.end(); ++it)
+		{
+			if (*it != &client && (*it)->isConnected())
+				_server->sendMessage((*it)->getFd(), notice_msg);
+		}
+		std::cout << client.getNickname() << " sent NOTICE to channel " << target << std::endl;
+	}
+	else
+	{
+		Clients* target_client = _server->getClientByNickname(target);
+		if (!target_client || !target_client->isConnected())
+			return ;
+		_server->sendMessage(target_client->getFd(), notice_msg);
+		std::cout << client.getNickname() << " sent NOTICE to " << target << std::endl;
 	}
 }
 

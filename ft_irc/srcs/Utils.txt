@@ -86,6 +86,7 @@
 // &opt : "La valeur est 1 (activé)"
 // sizeof(opt) : "La valeur fait 4 octets"
 
+RFC 1459
 
 nc localhost 6667
 
@@ -108,3 +109,4 @@ TOPIC #test :Channel de test
 PRIVMSG #test :Hello world!
 
 fuser -k 6666/tcp
+lsof -i :6666

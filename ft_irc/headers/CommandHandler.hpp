@@ -53,6 +53,7 @@
 # define ERR_NEEDMOREPARAMS		461
 # define ERR_ALREADYREGISTRED	462
 # define ERR_PASSWDMISMATCH		464
+# define ERR_NOORIGIN			409
 
 // Errors - MODES N PERMISSIONS
 # define ERR_KEYSET				467
@@ -96,6 +97,8 @@ class	CommandHandler
 		void		_handleInvite(Clients& client, const Messages& message);
 		void		_handleMode(Clients& client, const Messages& message);
 		void		_handleTopic(Clients& client, const Messages& message);
+		void		_handlePing(Clients& client, const Messages& message);
+		void		_handleNotice(Clients& client, const Messages& message);
 		void		_handleChannelModes(Clients& client, Channels* channel, const std::string& channelName, const std::string& modeString, const Messages& message);
 		void		_broadcastModeChange(Clients& client, const std::string& channelName, const std::string& mode, const std::string& param);
 		

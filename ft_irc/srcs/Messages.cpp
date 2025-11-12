@@ -110,18 +110,8 @@ bool Messages::_validateCommand() const
 		_command == "JOIN" || _command == "PART" || _command == "QUIT" ||
 		_command == "PRIVMSG" || _command == "NOTICE" || _command == "KICK" ||
 		_command == "MODE" || _command == "TOPIC" || _command == "INVITE" ||
-		_command == "PING" || _command == "PONG" || _command == "WHO" ||
-		_command == "WHOIS" || _command == "LIST" || _command == "NAMES")
+		_command == "PING")
 		return (true);
-	if (_command.size() == 3)
-	{
-		for (size_t i = 0; i < 3; i++)
-		{
-			if (!std::isdigit(_command[i]))
-				return (false);
-		}
-		return (true);
-	}
 	return (false);
 }
 
