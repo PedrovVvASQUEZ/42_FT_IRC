@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:53 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/11/11 18:58:58 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/13 17:03:11 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -399,7 +399,6 @@ void Server::stop(void)
 		close(_server_fd);
 		_server_fd = -1;
 	}
-	
 	std::cout << "Server stopped cleanly" << std::endl;
 }
 

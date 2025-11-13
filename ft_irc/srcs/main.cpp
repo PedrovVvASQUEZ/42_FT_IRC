@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 17:17:45 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/11/11 18:58:22 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/13 17:10:23 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,13 @@ Server	*g_server = NULL;
 
 void signalHandler(int signal)
 {
-	if ((signal == SIGINT || signal == SIGQUIT) && g_server)
+	if ((signal == SIGINT || signal == SIGQUIT || signal == SIGTERM) && g_server)
 	{
 		std::cout << "\nReceived signal " << signal << ". Shutting down server gracefully..." << std::endl;
 		g_server->stop();
+		delete g_server;
+		g_server = NULL;
+		exit (0);
 	}
 }
 
@@ -49,6 +52,8 @@ int main(int argc, char* argv[])
 	g_server = server;
 	signal(SIGINT, signalHandler);
 	signal(SIGQUIT, signalHandler);
+	signal(SIGTERM, signalHandler);
+	signal(SIGPIPE, SIG_IGN);
 	try
 	{
 		server->start();

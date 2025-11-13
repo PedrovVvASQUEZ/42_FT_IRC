@@ -6,7 +6,7 @@
 /*   By: pgrellie <pgrellie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 18:41:34 by pgrellie          #+#    #+#             */
-/*   Updated: 2025/11/11 19:00:27 by pgrellie         ###   ########.fr       */
+/*   Updated: 2025/11/13 15:39:19 by pgrellie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -801,7 +801,7 @@ void CommandHandler::_handlePing(Clients& client, const Messages& message)
 	std::string origin = message.getParam(0);
 	std::string pong_reply = "PONG " + _server->getServerName() + " :" + origin;
 	_server->sendMessage(client.getFd(), pong_reply);
-	std::cout << "PING from " << client.getNickname() << ", replied with PONG" << std::endl;
+	// std::cout << "PING from " << client.getNickname() << ", replied with PONG" << std::endl;
 }
 
 void CommandHandler::_handleNotice(Clients& client, const Messages& message)
